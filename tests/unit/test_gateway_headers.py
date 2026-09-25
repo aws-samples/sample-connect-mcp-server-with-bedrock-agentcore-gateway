@@ -9,6 +9,8 @@ the API key the Gateway injects.
 from __future__ import annotations
 
 import asyncio
+import json
+import logging
 from typing import Any
 
 import pytest
@@ -95,3 +97,31 @@ def test_caller_arguments_are_not_mutated(monkeypatch: pytest.MonkeyPatch) -> No
     _call(arguments)
 
     assert arguments["headers"] == INJECTED
+
+
+def _audit_logs(caplog: pytest.LogCaptureFixture) -> dict[str, dict[str, Any]]:
+    return {
+        (payload := json.loads(rec.getMessage()))["kind"]: payload
+        for rec in caplog.records
+        if rec.name == "demo_agent.trace"
+    }
+
+
+def test_audit_log_names_the_arguments_forwarded_on_each_call(
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
+    """CloudWatch shows WHICH arguments and headers reached the Gateway, so a live run can prove
+    that model-supplied headers were dropped — without logging any value."""
+    sent = _scripted(monkeypatch, [{"structuredContent": CHALLENGE}, {"structuredContent": {}}])
+
+    with caplog.at_level(logging.INFO, logger="demo_agent.trace"):
+        _call({"coin": "bitcoin", "headers": dict(INJECTED)})
+
+    proof = sent[1]["headers"]["PAYMENT-SIGNATURE"]
+    logs = _audit_logs(caplog)
+    assert logs["challenge"]["arg_keys"] == ["coin"]
+    assert logs["retry"]["arg_keys"] == ["coin", "headers"]
+    assert logs["retry"]["forwarded_headers"] == ["PAYMENT-SIGNATURE"]
+    rendered = " ".join(rec.getMessage() for rec in caplog.records)
+    for value in ("bitcoin", "replayed-proof", "attacker-key", proof):
+        assert value not in rendered

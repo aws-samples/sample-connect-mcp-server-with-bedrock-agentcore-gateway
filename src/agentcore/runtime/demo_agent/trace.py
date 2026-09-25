@@ -30,7 +30,7 @@ logger = logging.getLogger("demo_agent.trace")
 #
 # Deliberately NOT every kind. A line per tool call is noise, and noisy logs get filtered — a
 # filtered log is the same as no log to whoever needs the payment record later.
-_AUDITED_KINDS = frozenset({"payment", "settled", "challenge", "wallet", "error"})
+_AUDITED_KINDS = frozenset({"payment", "settled", "challenge", "wallet", "retry", "error"})
 
 # An allowlist, not a denylist. `record()` takes arbitrary `**detail`, so a future caller could hand
 # it a proof or a header value; enumerating what may be logged means adding a detail cannot silently
@@ -45,6 +45,9 @@ _AUDITED_FIELDS = (
     "pay_to",
     "tool",
     "x402_version",
+    # Argument and header NAMES forwarded to the Gateway. Names only; values stay out.
+    "arg_keys",
+    "forwarded_headers",
 )
 
 _events: list[dict[str, Any]] = []

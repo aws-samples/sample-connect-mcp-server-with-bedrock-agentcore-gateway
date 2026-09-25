@@ -195,6 +195,8 @@ class GatewayPaidToolClient:
             network=accepted.get("network", ""),
             pay_to=accepted.get("payTo", ""),
             x402_version=int(challenge.get("x402Version", 1)),
+            # Names only, never values: lets the audit log prove what the first call forwarded.
+            arg_keys=sorted(arguments),
         )
         instrument_id, session_id = _ensure_payment_context(user_id, user_email)
         trace.record("wallet", "Signing wallet resolved", instrument_id=instrument_id)
@@ -235,7 +237,12 @@ class GatewayPaidToolClient:
         retry_args = {**arguments, "headers": {header_name: header_value}}
         retried = await self._rpc("tools/call", {"name": name, "arguments": retry_args})
         settle_tx = _settlement_tx(retried)
-        trace.record("retry", f"Retried through Gateway with {header_name} in the arguments")
+        trace.record(
+            "retry",
+            f"Retried through Gateway with {header_name} in the arguments",
+            arg_keys=sorted(retry_args),
+            forwarded_headers=sorted(retry_args["headers"]),
+        )
         if settle_tx:
             trace.record("settled", "USDC settled on Solana devnet", tx=settle_tx)
         return {
