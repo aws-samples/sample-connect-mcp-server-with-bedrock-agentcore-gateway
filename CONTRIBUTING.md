@@ -25,8 +25,8 @@ request.
 ## Development setup
 
 ```bash
-npx projen          # regenerate pyproject.toml and .projen/ from .projenrc.py
 uv sync --group dev
+npx projen          # regenerate pyproject.toml and .projen/ from .projenrc.py
 npx projen install-hooks
 ```
 
@@ -35,11 +35,10 @@ npx projen install-hooks
 
 ## Before you push
 
-**There is no CI.** The inherited GitLab pipeline was removed when this sample moved to GitHub, so
-nothing will catch a mistake after you push. Run the checks yourself:
+**There is no CI.** Nothing will catch a mistake after you push, so run the checks yourself:
 
 ```bash
-npx projen lint    # ruff check + format check + mypy
+npx projen lint    # ruff check + format check
 npx projen test    # pytest, including CDK synth assertions
 ```
 

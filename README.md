@@ -395,8 +395,6 @@ Checklist:
    [Constraints worth knowing](#constraints-worth-knowing).
 4. If the vendor's tools are **free**, the payment path simply never triggers: no 402 means the agent
    returns the first result. The Payments resources can then be removed along with `PRIVY_*`.
-5. If the vendor uses **OAuth** rather than an API key, swap the credential provider for
-   `GatewayCredentialProvider.from_oauth_identity_arn(...)`; the rest of the construct is unchanged.
 
 ## Development and Testing
 

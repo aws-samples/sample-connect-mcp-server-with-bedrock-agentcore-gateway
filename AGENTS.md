@@ -23,7 +23,7 @@ sample about integrating someone else's server should not quietly be talking to 
 
 | I need to… | Read |
 |---|---|
-| understand the integration and its traps | [`README.md`](README.md) → What makes this non-obvious |
+| understand the integration and its traps | [`README.md`](README.md) → Constraints worth knowing |
 | follow the request path resource by resource | [`docs/architecture.md`](docs/architecture.md) |
 | know a business rule or an AC id | [`.kiro/steering/product-context.md`](.kiro/steering/product-context.md) |
 | know the hard coding rules | [`.kiro/steering/engineering-standards.md`](.kiro/steering/engineering-standards.md) |
@@ -71,9 +71,9 @@ system kept answering, just wrongly. Do not relax one because the code "looks co
   asserting whose credential it wants is not evidence of anything; the authority is in the credential
   (AC-2).
 - **`settings.py` is git-ignored and per-worktree.** A worktree materializes only tracked files, so a
-  fresh one silently has none of it and `app.py` falls back to `settings_sample.py` — deploying
-  placeholder values while looking successful. Copy it from the primary checkout, and mirror any key
-  you add back into the primary in the same session.
+  fresh one has none of the deploy values. `app.py` falls back to `settings_sample.py`, whose blank
+  required values should fail synthesis. Copy the real file from the primary checkout, and mirror any
+  key you add back into the primary in the same session.
 
 ## Review philosophy
 
@@ -110,14 +110,14 @@ Unit tests, acceptance tests, mocks, `cdk synth` and `cdk diff` are required whe
 none substitutes for this. If deployment is blocked, report the change as implemented but unverified
 and state the exact blocker. This gate does not apply to documentation-only changes.
 
-**Note the auditability gap when verifying payments.** `trace.record()` streams to the browser and
-does not write to CloudWatch, so `processPaymentId` and the settlement transaction never reach the
-logs. Runtime logs show outbound Gateway requests via httpx, which is enough to confirm the
-three-call shape (`tools/list`, `tools/call`, retry) but not the payment itself.
+**Verify payment audit delivery.** `trace.record()` streams to the browser and emits allowlisted
+money-relevant events to the Runtime logger, including `processPaymentId` and the settlement
+transaction. Confirm those JSON records reach CloudWatch in the deployed environment before relying
+on them as an audit record.
 
 ## Deploying (always `npx projen deploy`)
 
-**Never run a raw `cdk deploy`.** The projen task prepends `build:console`; skipping it ships a stale
+**Never run a raw `cdk deploy`.** The projen task prepends `build:web`; skipping it ships a stale
 or empty SPA bucket.
 
 - **Development deploys come first.** For a small, reversible, single-stack change, deploy and test
@@ -175,6 +175,5 @@ timeouts on all async I/O, and handling for `CancelledError`.
   prefix *is* the release note. Regenerate at a release, never per commit.
 - `.projenrc.py` owns `pyproject.toml` and `.projen/`. Edit the generator, then run `npx projen`; a
   hand-edit to a generated file is silently reverted by the next synth.
-- **There is no CI.** The inherited GitLab pipeline was removed when the sample moved to GitHub. Every
-  check is local: the pre-commit hooks and the `lint` / `test` / `build` projen tasks. Nothing will
-  catch a mistake for you after you push, so run them before you do.
+- **There is no CI.** Every check is local: the pre-commit hooks and the `lint` / `test` /
+  `build:web` projen tasks. Nothing will catch a mistake for you after you push, so run them first.

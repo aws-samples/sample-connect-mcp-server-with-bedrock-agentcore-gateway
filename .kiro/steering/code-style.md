@@ -4,7 +4,7 @@ inclusion: always
 # Code Style & File Format Conventions
 
 ## Python File Format
-- Python 3.11+; use modern syntax (`X | None` over `Optional[X]`, `list[str]` over `List[str]`)
+- Python 3.13+; use modern syntax (`X | None` over `Optional[X]`, `list[str]` over `List[str]`)
 - Formatter: `ruff format` (line length 100); import sorting via `ruff check --select I`
 - Every module starts with a one-line docstring describing its purpose
 - Public functions/classes require type hints on all parameters and return values
@@ -57,9 +57,7 @@ docs/
   README.md         # navigation
   architecture.md   # numbered walkthrough of the deployed topology
   architecture.svg  # the companion diagram; render it and LOOK at it after editing
-  pre-commit-hooks.md
-  research/         # dated investigation snapshots: YYYY-MM-DD-slug.md
-  slides/           # presentation material, not reference docs
+  pre-commit-hooks.md # current local quality gates
 ```
 
 Reusable procedures are skills (`.agents/skills/<name>/SKILL.md`), not documents.

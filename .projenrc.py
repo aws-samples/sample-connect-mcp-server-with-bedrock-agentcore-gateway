@@ -1,10 +1,7 @@
 from projen import JsonFile
 from projen.awscdk import AwsCdkPythonApp
 
-# Conventions (uv + ruff/mypy + the agent-review harness) are inherited from
-# osl_agent_end_to_end. Kept deliberately close so a rule learned in one repository still holds
-# here; the parts specific to this sample (React console, AgentCore runtime asset dirs) are
-# dropped rather than carried as dead configuration.
+# Project conventions: uv, Ruff, mypy, local security checks, and projen-managed CDK tasks.
 project = AwsCdkPythonApp(
     author_email="opensource@amazon.com",
     author_name="AWS GCR Web3",
@@ -60,7 +57,7 @@ project = AwsCdkPythonApp(
 
 project.gitignore.add_patterns(".idea/", ".vscode/", ".DS_Store")
 
-# Node build artifacts for the console (src/web/) and the x402 seller Lambda (src/lambda/seller/).
+# Node build artifacts for the console. Legacy seller paths remain ignored to protect old checkouts.
 # src/web/.env.local is generated from settings by `build:web` and may carry the Privy app id.
 project.gitignore.add_patterns(
     "src/web/node_modules/",
@@ -261,14 +258,7 @@ JsonFile(
 
 # --- CI ---
 #
-# No CI generator here. The GitLab pipeline this project inherited was removed when the sample
-# moved to GitHub: it could not run there, and a config that never runs is worse than none —
-# it reads as a passing gate. The checks it ran are still available locally as projen tasks
-# (`lint`, `test`, `build`) and through the pre-commit hooks, which is what `run-hooks` drives.
-#
-# When CI is added back, port these three findings rather than rediscovering them: cache only
-# `.uv_cache/` and never `.venv/` (archiving it cost ~98s per job); a Node RUNTIME is enough for
-# jsii, so do not build a full toolchain to run Python tests; and mypy already covers what a
-# `npx --yes pyright` invocation took 310s to check.
+# No CI generator is configured. Validation remains available through the local projen tasks and
+# pre-commit hooks.
 
 project.synth()

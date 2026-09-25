@@ -16,7 +16,7 @@ the root README shows the response messages and the status lookup in more detail
   it, deploy it, or configure it. Everything on our side of that line is Gateway configuration and a
   credential; everything past it — the tools, their prices, the payee address — belongs to the
   vendor. In the worked example it is OSL AgentPay, reached over the public internet.
-- Amazon Bedrock, CloudFront, S3 and Secrets Manager are AWS managed services in the same Region.
+- Amazon Bedrock, S3 and Secrets Manager are AWS managed services used by the regional deployment.
 - Stripe Privy and Solana devnet are external services.
 
 The asymmetry across that outer boundary is the point of the sample: inbound to the Gateway is AWS

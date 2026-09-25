@@ -90,21 +90,3 @@ def test_insecure_defaults_scan_retains_its_is_complete_json_contract(
     assert emitted[0]["status"] == "no-candidates"
     assert emitted[0]["scope"] == "src"
     assert emitted[0]["is_complete"] is True
-
-
-def test_slide_external_script_is_versioned_and_integrity_checked() -> None:
-    html = (ROOT / "docs/slides/x402-demo/index.html").read_text(encoding="utf-8")
-
-    assert "lucide@latest" not in html
-    assert "lucide@1.40.0" in html
-    assert 'integrity="sha384-' in html
-    assert 'crossorigin="anonymous"' in html
-
-
-def test_fontshare_stylesheets_are_not_loaded_without_integrity() -> None:
-    for relative_path in (
-        "docs/slides/paid-mcp/index.html",
-        "docs/slides/agentcore-payments/index.html",
-    ):
-        html = (ROOT / relative_path).read_text(encoding="utf-8")
-        assert "api.fontshare.com" not in html
