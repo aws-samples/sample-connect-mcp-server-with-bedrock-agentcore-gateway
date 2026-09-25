@@ -177,6 +177,10 @@ class GatewayPaidToolClient:
     async def call(
         self, name: str, arguments: dict[str, Any], *, user_id: str, user_email: str
     ) -> dict[str, Any]:
+        # The seller façade replays `arguments.headers` onto its REST route as real HTTP headers, so
+        # only this client may set it. A model-supplied value (e.g. from a prompt injection in tool
+        # output) could replay an old proof or compete with the Gateway-injected API key.
+        arguments = {k: v for k, v in arguments.items() if k != "headers"}
         trace.record("gateway", f"Gateway tools/call “{name}”", tool=name, arguments=arguments)
         result = await self._rpc("tools/call", {"name": name, "arguments": arguments})
         challenge = _challenge_from_result(result)

@@ -437,6 +437,13 @@ test into 155.7s in CI.
   placed in the agent image, request, or browser bundle.
 - **IAM service boundaries.** The proxy invokes the Runtime with its ECS task role; the Runtime
   invokes the Gateway with its execution role. Gateway inbound authorization is `AWS_IAM`.
+- **Only the Runtime sets forwarded headers.** The seller façade replays a tool call's `headers`
+  argument onto its REST route, so the Runtime drops any `headers` the model supplies and sends
+  exactly one header, the payment proof, on the retry.
+- **Replay protection is the seller's job.** Each paid call gets a fresh `ProcessPayment` proof that
+  is used once, but only the seller can reject a replayed proof. It should settle before it serves
+  the data. The proof travels as a tool argument, so enabling Gateway invocation logging records
+  it.
 - **Payment audit fields.** The Runtime emits allowlisted payment events, including
   `processPaymentId` and the settlement transaction, to its logger as well as the browser trace.
   Verify CloudWatch delivery, retention, and access controls in your deployment before treating
