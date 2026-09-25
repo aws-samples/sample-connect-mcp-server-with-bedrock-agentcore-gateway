@@ -15,7 +15,12 @@ const COPY = {
   brand: "AGENTCORE · X402",
   loginTitle: "Agentic payments demo",
   loginDescription:
-    "Sign in with email, delegate your Solana devnet wallet, then chat with an agent that pays for x402 tools on your behalf.",
+    "Your email is your Stripe Privy identity. The agent pays from a Solana devnet wallet linked to it:",
+  loginSteps: [
+    "Sign in with email.",
+    "Ask for a paid tool once. AgentCore creates your wallet on that first call.",
+    "Fund the wallet with devnet USDC and delegate signing to the agent.",
+  ],
   signIn: "Sign in with email",
   appTitle: "Agentic x402 payments",
   signOut: "Sign out",
@@ -298,7 +303,12 @@ export function App() {
         <div style={S.loginCard}>
           <div style={S.brand}>{COPY.brand}</div>
           <h1 style={S.h1}>{COPY.loginTitle}</h1>
-          <p style={S.sub}>{COPY.loginDescription}</p>
+          <p style={S.loginLead}>{COPY.loginDescription}</p>
+          <ol style={S.loginSteps}>
+            {COPY.loginSteps.map((step) => (
+              <li key={step}>{step}</li>
+            ))}
+          </ol>
           <button style={S.primary} onClick={login}>
             {COPY.signIn}
           </button>
@@ -818,7 +828,8 @@ const S = {
     cursor: "pointer",
   },
   h1: { fontSize: 24, margin: "8px 0 6px" },
-  sub: { color: "#555", fontSize: 14, marginBottom: 22 },
+  loginLead: { color: "#555", fontSize: 14, margin: "0 0 8px" },
+  loginSteps: { color: "#555", fontSize: 14, lineHeight: 1.6, margin: "0 0 22px", paddingLeft: 20 },
   flowList: {
     listStyle: "none",
     padding: 0,
