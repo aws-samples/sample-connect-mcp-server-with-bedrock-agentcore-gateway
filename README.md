@@ -4,7 +4,7 @@ Connect an MCP server you do **not** host to **Amazon Bedrock AgentCore Gateway*
 requires an **API key** — and keep the key out of your code, your CloudFormation templates, and your
 agent's process.
 
-The worked example is [OSL AgentPay](https://api-glb.osl.com), a third-party MCP server whose market
+The worked example is [OSL AgentPay](https://www.osl.com/en/agentpay/), a third-party MCP server whose market
 data tools are billed per call over the x402 protocol. It is a realistic case: someone else's
 endpoint, someone else's header convention, someone else's price.
 
@@ -160,7 +160,8 @@ suppressions are explicit in the construct that owns the resource.
   plus access to the configured Amazon Bedrock model.
 - AWS credentials for the target account, AWS CDK bootstrapped in `us-east-1`, and Docker running.
 - Python 3.13+, `uv`, and Node.js 22+.
-- **An API key for the third-party MCP server.** For OSL AgentPay, request one from OSL.
+- **An API key for the third-party MCP server.** For OSL AgentPay, apply for one at
+  [osl.com/en/agentpay/api-key](https://www.osl.com/en/agentpay/api-key).
 - For the payment half (needed only if your third-party tools charge):
   - a Stripe Privy app with app ID, wallet authorization key ID, app secret, and authorization
     private key;

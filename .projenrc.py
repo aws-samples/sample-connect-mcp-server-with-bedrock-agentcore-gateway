@@ -25,7 +25,6 @@ project = AwsCdkPythonApp(
         "bandit",
         "semgrep",
         "defusedxml",
-        "hypothesis",  # property-based testing for the adversarial-testing skill
         "pyyaml==6.0.3",  # used by scripts/validate/validate_kiro_config.py
         "auto-changelog",
         "pre-commit",

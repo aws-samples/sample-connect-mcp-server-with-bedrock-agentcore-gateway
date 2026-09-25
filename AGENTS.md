@@ -30,11 +30,6 @@ sample about integrating someone else's server should not quietly be talking to 
 | know naming/layout/formatting | [`.kiro/steering/code-style.md`](.kiro/steering/code-style.md) |
 | calibrate review severity | [`.kiro/steering/review-policy.md`](.kiro/steering/review-policy.md) |
 | understand the commit hooks | [`docs/pre-commit-hooks.md`](docs/pre-commit-hooks.md) |
-| audit a security-sensitive default or fallback | the `insecure-defaults-audit` skill |
-| write or gap-check an acceptance test | the `acceptance-testing` skill |
-
-Reusable procedures are skills (`.agents/skills/<name>/SKILL.md`), not docs. `.kiro/skills` and
-`.claude/skills` are compatibility symlinks to that one catalogue; never duplicate a skill.
 
 ## Hard rules with an outage behind them
 

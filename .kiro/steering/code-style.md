@@ -60,8 +60,6 @@ docs/
   pre-commit-hooks.md # current local quality gates
 ```
 
-Reusable procedures are skills (`.agents/skills/<name>/SKILL.md`), not documents.
-
 
 ## Naming
 - `snake_case` for functions/variables/modules, `PascalCase` for classes, `UPPER_SNAKE` for constants

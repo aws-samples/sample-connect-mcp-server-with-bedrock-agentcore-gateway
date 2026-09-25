@@ -3,7 +3,7 @@
   "hooks": [
     {
       "name": "Review current diff in this session",
-      "description": "Append an on-demand semantic-review prompt to the current profile; use scripts/review/review-session-diff.sh for an independent read-only reviewer process.",
+      "description": "Append an on-demand semantic-review prompt to the current profile.",
       "trigger": "Manual",
       "action": {
         "type": "agent",
@@ -12,7 +12,7 @@
     },
     {
       "name": "Check acceptance-criteria coverage in this session",
-      "description": "Append an on-demand AC-to-test gap-check prompt to the current profile; use the qa profile for the dedicated QA workflow.",
+      "description": "Append an on-demand AC-to-test gap-check prompt to the current profile.",
       "trigger": "Manual",
       "action": {
         "type": "agent",

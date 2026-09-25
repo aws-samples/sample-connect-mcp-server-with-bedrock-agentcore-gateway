@@ -37,10 +37,6 @@
       "type": "devenv"
     },
     {
-      "name": "hypothesis",
-      "type": "devenv"
-    },
-    {
       "name": "moto[dynamodb]",
       "type": "devenv"
     },

@@ -219,8 +219,6 @@ def validate_hook_file(path: Path) -> list[str]:
 def validate_repository(root: Path) -> list[str]:
     errors: list[str] = []
     agents = sorted((root / ".kiro" / "agents").glob("*.md"))
-    if not agents:
-        errors.append(".kiro/agents: no Markdown agent profiles found")
     for path in agents:
         errors.extend(f"{path.relative_to(root)}: {error}" for error in validate_agent(path, root))
     legacy = sorted((root / ".kiro" / "agents").glob("*.json"))

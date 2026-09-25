@@ -86,7 +86,7 @@ echo "━━━ AC Coverage: ${PROVEN}/${TOTAL} proven ━━━"
 if [ -n "$GAPS" ]; then
   echo "Untested ACs:"
   printf '%b' "$GAPS"
-  echo "Recommend: use the acceptance-testing skill to write the missing tests."
+  echo "Recommend: add an acceptance test in tests/acceptance/ for each missing AC."
 fi
 
 if [ "$STRICT" = "1" ] && [ "$P0_GAPS" -gt 0 ]; then

@@ -28,7 +28,6 @@ src/console/
 .git/
 .idea/
 .vscode/
-.agents/
 .claude/
 .kiro/
 

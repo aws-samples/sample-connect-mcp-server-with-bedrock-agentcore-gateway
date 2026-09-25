@@ -27,7 +27,6 @@ dev = [
   "defusedxml",
   "fastapi",
   "httpx",
-  "hypothesis",
   "moto[dynamodb]",
   "mypy",
   "pre-commit",

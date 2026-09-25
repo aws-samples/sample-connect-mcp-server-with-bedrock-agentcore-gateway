@@ -38,8 +38,7 @@ each as an emphasize rule for any API-handling or request-parsing change:
   account or `root` principal. Flag cross-environment trust.
 - **Cert/TLS validation disabled "for dev"**: `verify=False` / skipped cert checks that can
   reach prod. Flag disabled validation without a stage guard.
-- **Secrets / prompt content in logs**: customer input or secrets logged at INFO. (Pairs with
-  the canary-injection tests in the adversarial-testing skill.)
+- **Secrets / prompt content in logs**: customer input or secrets logged at INFO.
 - **Taint flow (source → sanitizer → sink)**: trace whether user-controlled input (source)
   reaches a dangerous operation (sink — SQL, subprocess, file path, eval, deserialization)
   without passing a validator/escaper (sanitizer) in between. An untainted path from source to

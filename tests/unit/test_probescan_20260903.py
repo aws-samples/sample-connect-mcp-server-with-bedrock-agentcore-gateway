@@ -2,12 +2,9 @@
 
 from __future__ import annotations
 
-import importlib.util
 import json
 import re
-import sys
 from pathlib import Path
-from types import ModuleType
 
 import pytest
 
@@ -15,16 +12,6 @@ from scripts.probe_x402_pay import _request_succeeded
 
 ROOT = Path(__file__).resolve().parents[2]
 SHA256_PIN = re.compile(r"^FROM \S+@sha256:[0-9a-f]{64}$", re.MULTILINE)
-
-
-def _load_module(path: Path, name: str) -> ModuleType:
-    spec = importlib.util.spec_from_file_location(name, path)
-    if spec is None or spec.loader is None:
-        raise AssertionError(f"cannot load {path}")
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[name] = module
-    spec.loader.exec_module(module)
-    return module
 
 
 @pytest.mark.parametrize(
@@ -67,26 +54,3 @@ def test_top_level_node_dependency_versions_are_exact() -> None:
 )
 def test_probe_success_check_uses_the_http_status_range(status_code: int, expected: bool) -> None:
     assert _request_succeeded(status_code) is expected
-
-
-def test_insecure_defaults_scan_retains_its_is_complete_json_contract(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    audit = _load_module(
-        ROOT / ".agents/skills/insecure-defaults-audit/scripts/insecure_defaults_audit.py",
-        "probescan_insecure_defaults_audit",
-    )
-    result = audit.ScanResult(status="no-candidates", scope="src", coverage=audit.Coverage())
-    emitted: list[dict[str, object]] = []
-
-    assert result.complete is True
-    assert "is_complete" not in vars(result)
-    monkeypatch.setattr(audit, "scan_scope", lambda *_args: result)
-    monkeypatch.setattr(audit, "_write_json", emitted.append)
-    monkeypatch.setattr(sys, "argv", ["audit", "scan", "src"])
-
-    assert audit.main() == 0
-    assert len(emitted) == 1
-    assert emitted[0]["status"] == "no-candidates"
-    assert emitted[0]["scope"] == "src"
-    assert emitted[0]["is_complete"] is True
