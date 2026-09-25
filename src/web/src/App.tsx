@@ -38,7 +38,6 @@ const COPY = {
   delegationTitle: "Let the agent sign for you",
   delegated: "✓ Wallet delegated",
   delegate: "Delegate signing to the agent",
-  copyToken: "Copy access token",
   newConversation: "New conversation",
   traceTitle: "x402 call trace",
   traceEmpty:
@@ -284,17 +283,6 @@ export function App() {
     }
   }
 
-  async function copyToken() {
-    try {
-      const token = await getAccessToken();
-      if (!token) throw new Error("no token");
-      await navigator.clipboard.writeText(token);
-      setNote("Access token copied to clipboard.");
-    } catch (e) {
-      setNote(`Could not copy token: ${String(e)}`);
-    }
-  }
-
   if (!ready) return <div style={S.center}>{COPY.loading}</div>;
 
   if (!authenticated) {
@@ -469,9 +457,6 @@ export function App() {
                     {COPY.delegate}
                   </button>
                 )}
-                <button style={S.ghostBtn} onClick={copyToken}>
-                  {COPY.copyToken}
-                </button>
                 <button
                   style={S.ghostBtn}
                   onClick={() => {
