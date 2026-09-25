@@ -86,6 +86,7 @@ cython_debug/
 .idea/
 .vscode/
 .DS_Store
+cdk.context.json
 src/web/node_modules/
 src/web/dist/
 src/web/.env.local

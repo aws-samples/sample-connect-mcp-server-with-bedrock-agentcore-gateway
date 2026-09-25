@@ -55,6 +55,9 @@ project = AwsCdkPythonApp(
 )
 
 project.gitignore.add_patterns(".idea/", ".vscode/", ".DS_Store")
+# CDK writes account-specific lookups (account id, AZs) here on first synth; keep them out of the
+# public repository.
+project.gitignore.add_patterns("cdk.context.json")
 
 # Node build artifacts for the console. Legacy seller paths remain ignored to protect old checkouts.
 # src/web/.env.local is generated from settings by `build:web` and may carry the Privy app id.
