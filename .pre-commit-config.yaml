@@ -7,9 +7,9 @@ repos:
     rev: v4.4.0
     hooks:
       - id: trailing-whitespace
-        exclude: ^(.projen/|\.env/|cdk\.out/|cdk\.json|pyproject\.toml|pyrightconfig\.json|\.gitlab-ci\.yml|\.gitattributes|\.gitignore|requirements.*\.txt)
+        exclude: ^(.projen/|\.env/|cdk\.out/|cdk\.json|pyproject\.toml|pyrightconfig\.json|\.gitattributes|\.gitignore|requirements.*\.txt)
       - id: end-of-file-fixer
-        exclude: ^(.projen/|\.env/|cdk\.out/|cdk\.json|pyproject\.toml|pyrightconfig\.json|\.gitlab-ci\.yml|\.gitattributes|\.gitignore|requirements.*\.txt)
+        exclude: ^(.projen/|\.env/|cdk\.out/|cdk\.json|pyproject\.toml|pyrightconfig\.json|\.gitattributes|\.gitignore|requirements.*\.txt)
       - id: check-yaml
       - id: check-added-large-files
       - id: check-merge-conflict

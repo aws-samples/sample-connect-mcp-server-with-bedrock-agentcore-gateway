@@ -63,9 +63,8 @@ scripts/dev/
 .coverage
 .coverage.*
 
-# CI-only caches that live INSIDE the build context (GitLab requires cache paths under
-# $CI_PROJECT_DIR). Every stack-synthesizing test makes CDK walk and hash this root, so leaving
-# these in cost ~100-155s PER TEST in CI for tests that run in 0.7s locally. See .gitlab-ci.yml:
-# UV_CACHE_DIR and JSII_RUNTIME_PACKAGE_CACHE_ROOT.
+# Tool caches that may live INSIDE the build context (e.g. UV_CACHE_DIR and
+# JSII_RUNTIME_PACKAGE_CACHE_ROOT pointed at the repo). Every stack-synthesizing test makes CDK walk
+# and hash this root, so leaving these in can add minutes per test.
 .uv_cache/
 .jsii_cache/
