@@ -1,0 +1,46 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Scan prompts for secrets",
+      "description": "Block a submitted prompt when it contains a high-confidence secret pattern.",
+      "trigger": "UserPromptSubmit",
+      "timeout": 5,
+      "action": {
+        "type": "command",
+        "command": "scripts/hooks/check-prompt-secrets.sh"
+      }
+    },
+    {
+      "name": "Guard dangerous shell commands",
+      "description": "Block irreversible or high-blast-radius shell operations.",
+      "trigger": "PreToolUse",
+      "matcher": "execute_bash|shell",
+      "timeout": 5,
+      "action": {
+        "type": "command",
+        "command": "scripts/hooks/guard-dangerous-ops.sh"
+      }
+    },
+    {
+      "name": "Check saved Python files",
+      "trigger": "PostFileSave",
+      "matcher": "\\.py$",
+      "timeout": 30,
+      "action": {
+        "type": "command",
+        "command": "scripts/hooks/check-changed-file.sh \"{{filePath}}\""
+      }
+    },
+    {
+      "name": "Check saved config files",
+      "trigger": "PostFileSave",
+      "matcher": "\\.(json|ya?ml|md)$",
+      "timeout": 15,
+      "action": {
+        "type": "command",
+        "command": "scripts/hooks/check-config-file.sh \"{{filePath}}\""
+      }
+    }
+  ]
+}

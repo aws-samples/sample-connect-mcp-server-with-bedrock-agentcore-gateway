@@ -1,0 +1,11 @@
+# Container runtime deps for the payer agent (installed in the image, NOT in the CDK app venv).
+# Payment is via AgentCore ProcessPayment (boto3) — no client-side signing SDKs needed.
+bedrock-agentcore
+claude-agent-sdk
+httpx
+# Floor, not just `boto3`: the AgentCore Payments data-plane operations (ProcessPayment,
+# ListPaymentInstruments, …) only exist in a recent botocore, and an older one fails as
+# `AttributeError: 'BedrockAgentCore' object has no attribute '…'` at call time, not at install.
+boto3>=1.43.85
+# Verify the caller's Privy access token against Privy's JWKS (ES256) to derive the payment user.
+pyjwt[crypto]

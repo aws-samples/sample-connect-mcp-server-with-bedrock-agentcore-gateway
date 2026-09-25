@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AgentCore Payments × x402 · 为什么、怎么工作、怎么开始</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- Display/body use the Google-hosted CJK families below, with system fallbacks. -->
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500&family=Noto+Serif+SC:wght@300;500&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --stage-bg:#151320;
+  --slide-bg:#FBFAFD;
+  --ink:#141221;
+  --ink-2:#4A4560;
+  --ink-3:#7C7694;
+  --accent:#8C4FFF;              /* AWS purple */
+  --accent-deep:#5B21C7;
+  --accent-tint-2:#F8F4FF;
+  --line:#E4DFF0;
+
+  --display:"Noto Serif SC",Georgia,serif;
+  --body:"Noto Sans SC",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,monospace;
+
+  --pad-x:104px;
+  --pad-y:76px;
+  --ease:cubic-bezier(.16,1,.3,1);
+  --dur:.62s;
+}
+
+*{margin:0;padding:0;box-sizing:border-box}
+
+/* ===== viewport-base.css (verbatim — required by the skill) ===== */
+html,body{width:100%;height:100%;margin:0;overflow:hidden;background:var(--stage-bg,#000)}
+.deck-viewport{position:fixed;inset:0;overflow:hidden;background:var(--stage-bg,#000)}
+.deck-stage{position:absolute;left:0;top:0;width:1920px;height:1080px;overflow:hidden;transform-origin:0 0;background:var(--slide-bg,#fff)}
+.slide{position:absolute;inset:0;width:1920px;height:1080px;overflow:hidden;display:block;visibility:hidden;opacity:0;pointer-events:none;background:var(--slide-bg,#fff)}
+.slide.active,.slide.visible{visibility:visible;opacity:1;pointer-events:auto;z-index:1}
+img,video,canvas,svg{max-width:100%;max-height:100%}
+.deck-controls{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:1000}
+@media print{
+  html,body{width:1920px;height:auto;overflow:visible;background:#fff}
+  .deck-viewport{position:static;overflow:visible;background:#fff}
+  .deck-stage{position:static;width:auto;height:auto;transform:none!important;background:none}
+  .slide{position:relative;display:block!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important;width:1920px;height:1080px;break-after:page;page-break-after:always}
+  .slide:last-child{break-after:auto;page-break-after:auto}
+  .deck-controls{display:none!important}
+}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.2s!important}}
+/* ===== end viewport-base.css ===== */
+
+.slide{
+  font-family:var(--body);color:var(--ink);
+  padding:var(--pad-y) var(--pad-x);
+  display:flex;flex-direction:column;
+  /* atmosphere: faint lattice + one soft purple bloom, not a flat fill */
+  background:
+    radial-gradient(1100px 620px at 100% -12%, rgba(140,79,255,.10), transparent 65%),
+    radial-gradient(760px 520px at -8% 108%, rgba(140,79,255,.055), transparent 60%),
+    repeating-linear-gradient(0deg,rgba(20,18,33,.035) 0 1px,transparent 1px 44px),
+    repeating-linear-gradient(90deg,rgba(20,18,33,.035) 0 1px,transparent 1px 44px),
+    var(--slide-bg);
+}
+.slide.is-dark{
+  --ink:#F6F3FF;--ink-2:#C7BEE4;--ink-3:#9C93BE;--line:rgba(255,255,255,.16);
+  --accent-tint-2:rgba(140,79,255,.10);
+  color:#F6F3FF;
+  background:
+    radial-gradient(1200px 700px at 88% -10%, rgba(140,79,255,.42), transparent 62%),
+    repeating-linear-gradient(0deg,rgba(255,255,255,.035) 0 1px,transparent 1px 44px),
+    repeating-linear-gradient(90deg,rgba(255,255,255,.035) 0 1px,transparent 1px 44px),
+    #171426;
+}
+
+/* --- type --- */
+.eyebrow{font-family:var(--mono);font-size:19px;letter-spacing:.22em;text-transform:uppercase;color:var(--accent-deep);font-weight:500}
+.is-dark .eyebrow{color:#C9A9FF}
+h1{font-family:var(--display);font-weight:300;font-size:112px;line-height:1.02;letter-spacing:-.02em}
+h2{font-family:var(--display);font-weight:300;font-size:70px;line-height:1.06;letter-spacing:-.018em;margin-top:14px}
+h3{font-family:var(--display);font-weight:400;font-size:33px;line-height:1.2}
+.lede{font-size:29px;line-height:1.5;color:var(--ink-2);max-width:1180px;margin-top:20px;font-weight:400}
+.mono{font-family:var(--mono);font-size:.92em}
+em{color:var(--accent-deep);font-style:italic}
+.is-dark em{color:#C9A9FF}
+.hair{height:1px;background:var(--line);margin:30px 0}
+.foot{margin-top:auto;display:flex;justify-content:space-between;align-items:flex-end;
+  font-family:var(--mono);font-size:18px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);
+  border-top:1px solid var(--line);padding-top:22px}
+.head{display:flex;flex-direction:column;gap:6px}
+
+/* --- grids & cards --- */
+.grid{display:grid;gap:24px;margin-top:38px}
+.g3{grid-template-columns:repeat(3,1fr)}
+.g3x2{grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(2,1fr)}
+.card{background:#fff;border:1px solid var(--line);border-radius:2px;padding:30px 30px 26px;display:flex;flex-direction:column;gap:12px;
+  box-shadow:0 1px 0 rgba(20,18,33,.03)}
+.is-dark .card{background:rgba(255,255,255,.045);border-color:var(--line);box-shadow:none}
+.card .tag{font-family:var(--mono);font-size:17px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3)}
+.card p{font-size:21px;line-height:1.56;color:var(--ink-2)}
+.card.hot{background:var(--accent);border-color:var(--accent);color:#fff}
+.card.hot .tag{color:rgba(255,255,255,.78)}
+.card.hot p{color:rgba(255,255,255,.94)}
+.card.hot h3{color:#fff}
+.card.tint{background:var(--accent-tint-2);border-color:#E3D6FF}
+
+/* --- two-column compare --- */
+.duo{display:grid;grid-template-columns:1fr 1px 1fr;gap:0 60px;margin-top:44px;flex:1}
+.duo .vr{background:var(--line)}
+.duo .col{display:flex;flex-direction:column;gap:16px}
+.duo .badge{display:inline-flex;align-items:center;gap:14px;font-family:var(--mono);font-size:18px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3)}
+.duo .badge b{font-family:var(--display);font-size:26px;letter-spacing:0;color:var(--ink);font-weight:500;
+  border:1px solid var(--ink);padding:2px 14px;border-radius:2px}
+.duo .col.hot .badge b{color:var(--accent-deep);border-color:var(--accent)}
+.duo .big{font-family:var(--display);font-size:64px;font-weight:300;line-height:1.05;letter-spacing:-.02em}
+.duo .col.hot .big{color:var(--accent-deep)}
+.duo p{font-size:23px;line-height:1.55;color:var(--ink-2);max-width:640px}
+.duo ul{list-style:none;display:flex;flex-direction:column;gap:12px;margin-top:auto;border-top:1px solid var(--line);padding-top:22px}
+.duo li{font-size:21px;line-height:1.5;padding-left:26px;position:relative;color:var(--ink-2)}
+.duo li::before{content:"";position:absolute;left:0;top:.72em;width:12px;height:1px;background:var(--ink-3)}
+.duo .col.hot li::before{background:var(--accent)}
+
+/* --- component chain --- */
+.chain{display:grid;grid-template-columns:repeat(6,1fr);margin-top:46px;flex:1;align-items:stretch}
+.chain .node{position:relative;padding:26px 22px;border:1px solid var(--line);border-right:0;background:#fff;display:flex;flex-direction:column;gap:10px}
+.chain .node:last-child{border-right:1px solid var(--line)}
+.chain .node.hot{background:var(--accent);border-color:var(--accent)}
+.chain .node.hot .nm,.chain .node.hot p,.chain .node.hot .ix{color:#fff}
+.chain .ix{font-family:var(--mono);font-size:16px;letter-spacing:.16em;color:var(--ink-3)}
+.chain .nm{font-family:var(--mono);font-size:21px;font-weight:500;color:var(--ink);line-height:1.25}
+.chain p{font-size:19px;line-height:1.5;color:var(--ink-2)}
+.chain .node::after{content:"";position:absolute;right:-9px;top:50%;width:16px;height:16px;
+  border-top:1px solid var(--ink-3);border-right:1px solid var(--ink-3);transform:translateY(-50%) rotate(45deg);z-index:2}
+.chain .node:last-child::after{display:none}
+
+/* --- horizontal steps --- */
+.steps{margin-top:52px;flex:1;display:grid;grid-template-columns:repeat(5,1fr);align-items:start;position:relative}
+.steps::before{content:"";position:absolute;left:6%;right:6%;top:26px;height:1px;
+  background:repeating-linear-gradient(90deg,var(--ink-3) 0 6px,transparent 6px 12px);opacity:.5}
+.steps .st{display:flex;flex-direction:column;align-items:center;text-align:center;padding:0 20px;gap:14px}
+.steps .bullet{width:14px;height:14px;background:var(--ink);margin-top:19px;position:relative;z-index:2;transform:rotate(45deg)}
+.steps .st.hot .bullet{background:var(--accent)}
+.steps .n{font-family:var(--mono);font-size:17px;letter-spacing:.18em;color:var(--ink-3)}
+.steps .st.hot .n{color:var(--accent-deep)}
+.is-dark .steps .st.hot .n{color:#C9A9FF}
+.steps .t{font-family:var(--display);font-size:31px;font-weight:400;line-height:1.15}
+.steps .d{font-size:19.5px;line-height:1.55;color:var(--ink-2)}
+
+/* --- architecture --- */
+.arch{margin-top:40px;display:flex;flex-direction:column;gap:22px}
+.arch .row{display:flex;align-items:stretch}
+.arch .box{flex:1;border:1px solid var(--line);background:#fff;padding:20px;display:flex;flex-direction:column;gap:6px;position:relative}
+.arch .box + .box{border-left:0}
+.arch .box .l{font-family:var(--mono);font-size:15.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3)}
+.arch .box .v{font-size:22px;line-height:1.3;font-weight:500}
+.arch .box.hot{background:var(--accent);border-color:var(--accent)}
+.arch .box.hot .l{color:rgba(255,255,255,.75)}
+.arch .box.hot .v{color:#fff}
+.arch .box::after{content:"→";position:absolute;right:-11px;top:50%;transform:translateY(-50%);
+  font-family:var(--mono);font-size:20px;color:var(--ink-3);background:var(--slide-bg);padding:0 2px;z-index:3}
+.arch .box:last-child::after{display:none}
+.arch .side{display:flex;gap:18px;align-items:center;font-family:var(--mono);font-size:17px;letter-spacing:.1em;color:var(--ink-3);text-transform:uppercase}
+.arch .side .chip{border:1px dashed var(--accent);color:var(--accent-deep);padding:8px 16px;border-radius:2px;letter-spacing:.12em}
+
+/* --- KPIs --- */
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:26px}
+.kpi{border-top:2px solid var(--accent);padding-top:16px}
+.kpi .num{font-family:var(--display);font-size:56px;font-weight:300;line-height:1;letter-spacing:-.02em}
+.kpi .lab{font-size:19px;color:var(--ink-2);margin-top:8px;line-height:1.45}
+
+/* --- split slides --- */
+.split{display:grid;grid-template-columns:1fr 1fr;flex:1}
+.split .half{padding:var(--pad-y) 72px;display:flex;flex-direction:column}
+.split .half.paint{background:linear-gradient(155deg,var(--accent) 0%,var(--accent-deep) 100%);color:#fff}
+.split .half.paint h2{color:#fff}
+.split .half.paint .eyebrow{color:rgba(255,255,255,.8)}
+.split .half.paint p{color:rgba(255,255,255,.92)}
+.rows{display:flex;flex-direction:column;margin-top:auto}
+.rows .r{display:grid;grid-template-columns:96px 1fr;gap:26px;padding:22px 0;border-top:1px solid var(--line);align-items:start}
+.rows .r:last-child{border-bottom:2px solid var(--accent)}
+.rows .idx{font-family:var(--display);font-size:52px;font-weight:300;line-height:.9;color:var(--ink-3)}
+.rows .r:last-child .idx{color:var(--accent-deep)}
+.rows p{font-size:20.5px;line-height:1.55;color:var(--ink-2);margin-top:6px}
+
+/* --- screenshots --- */
+.shots{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:24px}
+.shot{border:1px solid var(--line);background:#fff;padding:10px}
+.shot img{display:block;width:100%;height:104px;object-fit:cover;object-position:top left}
+.shot .cap{font-family:var(--mono);font-size:15px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);padding-top:10px}
+
+/* --- cover --- */
+.cover{justify-content:space-between}
+.cover .bar{width:150px;height:6px;background:var(--accent)}
+.cover h1{font-size:132px;max-width:1400px;margin-top:26px}
+.cover .meta{display:flex;justify-content:space-between;align-items:flex-end;border-top:1px solid var(--line);padding-top:26px;
+  font-family:var(--mono);font-size:19px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3)}
+
+/* --- reveal --- */
+.reveal{opacity:0;transform:translateY(26px);transition:opacity var(--dur) var(--ease),transform var(--dur) var(--ease)}
+.slide.visible .reveal{opacity:1;transform:none}
+.slide.visible .reveal:nth-child(1){transition-delay:.05s}
+.slide.visible .reveal:nth-child(2){transition-delay:.13s}
+.slide.visible .reveal:nth-child(3){transition-delay:.21s}
+.slide.visible .reveal:nth-child(4){transition-delay:.29s}
+.stag > *{opacity:0;transform:translateY(22px);transition:opacity .5s var(--ease),transform .5s var(--ease)}
+.slide.visible .stag > *{opacity:1;transform:none}
+.slide.visible .stag > *:nth-child(1){transition-delay:.22s}
+.slide.visible .stag > *:nth-child(2){transition-delay:.30s}
+.slide.visible .stag > *:nth-child(3){transition-delay:.38s}
+.slide.visible .stag > *:nth-child(4){transition-delay:.46s}
+.slide.visible .stag > *:nth-child(5){transition-delay:.54s}
+.slide.visible .stag > *:nth-child(6){transition-delay:.62s}
+
+/* --- chrome outside the stage --- */
+.deck-controls{display:flex;align-items:center;gap:16px;font-family:var(--mono);font-size:14px;letter-spacing:.16em;color:rgba(255,255,255,.55)}
+.deck-controls .track{width:220px;height:2px;background:rgba(255,255,255,.16)}
+.deck-controls .fill{height:2px;background:var(--accent);width:0;transition:width .35s var(--ease)}
+.edit-hotzone{position:fixed;top:0;left:0;width:80px;height:80px;z-index:10000;cursor:pointer}
+.edit-toggle{position:fixed;top:16px;left:16px;z-index:10001;opacity:0;pointer-events:none;transition:opacity .3s ease;
+  background:var(--accent);color:#fff;border:0;border-radius:2px;padding:8px 12px;font-family:var(--mono);font-size:13px;cursor:pointer}
+.edit-toggle.show,.edit-toggle.active{opacity:1;pointer-events:auto}
+[contenteditable="true"]{outline:1px dashed var(--accent);outline-offset:3px}
+</style>
+</head>
+<body>
+<div class="deck-viewport">
+  <main class="deck-stage" id="deckStage">
+
+  <!-- 01 · Cover -->
+  <section class="slide cover is-dark active">
+    <div>
+      <div class="reveal bar"></div>
+      <div class="reveal eyebrow" style="margin-top:34px">FROM ACTION TO TRANSACTION</div>
+      <h1 class="reveal">Agent 不只要会做事<br>还要会<em>付钱</em></h1>
+      <p class="reveal lede" style="max-width:1120px">为什么需要 AgentCore Payments,它怎么工作,我们真跑通的一个 demo,以及你要开一个付费 MCP 市场该怎么做。</p>
+    </div>
+    <div class="reveal meta">
+      <span>AgentCore Payments × x402 · Solana devnet · 0.001 USDC / call</span>
+      <span>← → 翻页 · E 编辑</span>
+    </div>
+  </section>
+
+  <!-- 02 · 今天 vs 未来 -->
+  <section class="slide">
+    <div class="head">
+      <div class="reveal eyebrow">WHY THIS EXISTS · 01</div>
+      <h2 class="reveal">商业模式正在被重写</h2>
+    </div>
+    <div class="duo stag">
+      <div class="col">
+        <div class="badge"><b>今天</b> BUILT FOR HUMANS</div>
+        <div class="big">订阅制</div>
+        <p>定价假设买家是人:先注册、拿 key、按月付费,超出套餐要人来批。</p>
+        <ul>
+          <li>订阅与阶梯套餐,一刀切定价</li>
+          <li>付款要人在环里点确认</li>
+          <li>每个服务一段独立的账单关系</li>
+          <li>集成成本高到只有大客户值得接</li>
+        </ul>
+      </div>
+      <div class="vr"></div>
+      <div class="col hot">
+        <div class="badge"><b>未来</b> BUILT FOR AGENTS</div>
+        <div class="big">按次计费</div>
+        <p>买家变成 agent:随用随付、实时结算,单价可以低到一美分的几分之一。</p>
+        <ul>
+          <li>API、内容、算力按调用计费</li>
+          <li>每次调用即时结算,没有账单周期</li>
+          <li>数十亿 agent 发起的微交易</li>
+          <li>长尾服务第一次有了可行的收款方式</li>
+        </ul>
+      </div>
+    </div>
+    <div class="foot"><span>Tool providers · Content platforms · API services</span><span>02 / 10</span></div>
+  </section>
+
+  <!-- 03 · 自己做有多难 -->
+  <section class="slide">
+    <div class="head">
+      <div class="reveal eyebrow">WHY THIS EXISTS · 02</div>
+      <h2 class="reveal">让 agent 能付钱,很难</h2>
+      <p class="reveal lede">开发者想关心的是 agent <b>做什么</b>,而不是它<b>怎么完成一笔交易</b>。</p>
+    </div>
+    <div class="grid g3 stag" style="flex:1">
+      <div class="card">
+        <div class="tag">01 · WALLETS &amp; CREDENTIALS</div>
+        <h3>每个钱包提供商一套集成</h3>
+        <p>私钥与 API secret 怎么存、每个终端用户怎么充值与委托签名、钱包怎么和用户对上——换一个 provider 就重做一遍。</p>
+        <div class="hair" style="margin:auto 0 0"></div>
+        <div class="tag">PER-PROVIDER, PER-USER</div>
+      </div>
+      <div class="card hot">
+        <div class="tag">02 · FRAGMENTATION</div>
+        <h3>协议、版本、网络全都碎</h3>
+        <p>x402 有 v1/v2 且重试头名不同;网络横跨 EVM 与 Solana、主网与测试网,证明格式各不相同。一次集成动辄数月,而标准还在动。</p>
+        <div class="hair" style="margin:auto 0 0;background:rgba(255,255,255,.3)"></div>
+        <div class="tag">MONTHS PER INTEGRATION</div>
+      </div>
+      <div class="card">
+        <div class="tag">03 · AUTONOMY RISK</div>
+        <h3>自主消费失控且无法归因</h3>
+        <p>并发调用下没有原子扣减就会超支;没有内建审计,说不清哪一笔花在了谁身上——出问题无法追责。</p>
+        <div class="hair" style="margin:auto 0 0"></div>
+        <div class="tag">OVERSPEND, NO ATTRIBUTION</div>
+      </div>
+    </div>
+    <div class="foot"><span>What we hear from developers</span><span>03 / 10</span></div>
+  </section>
+
+  <!-- 04 · 托管服务提供什么 -->
+  <section class="slide">
+    <div class="head">
+      <div class="reveal eyebrow">THE SERVICE · GENERALLY AVAILABLE</div>
+      <h2 class="reveal">托管服务提供什么</h2>
+    </div>
+    <div class="grid g3x2 stag" style="flex:1">
+      <div class="card"><div class="tag">01 · WALLETS</div><h3>嵌入式钱包</h3><p>把终端用户连到 <b>Coinbase CDP</b> 或 <b>Stripe(Privy)</b> 的嵌入式钱包,用稳定币付款。</p></div>
+      <div class="card hot"><div class="tag">02 · ORCHESTRATION</div><h3>一次 ProcessPayment</h3><p>限额校验 → 网络解析 → 构造交易 → 签名 → 出证明。支持 <span class="mono">x402</span> 与 <span class="mono">MPP</span>。</p></div>
+      <div class="card"><div class="tag">03 · LIMITS</div><h3>预算与护栏</h3><p>会话级 <span class="mono">availableSpendAmount</span> 与 <span class="mono">expiryTimeInMinutes</span>(15–480);并发下原子预留,限额不会被突破。</p></div>
+      <div class="card"><div class="tag">04 · OBSERVABILITY</div><h3>花了多少,花在哪</h3><p>CloudWatch 指标:成功/失败次数、时延、花费金额,按 payment manager 与资源 ARN 归因。</p></div>
+      <div class="card"><div class="tag">05 · PROVIDER-AGNOSTIC</div><h3>换 provider 不改 agent</h3><p>钱包提供商、区块链网络、支付协议三个维度都收在服务内部,agent 代码只调一个 API。</p></div>
+      <div class="card tint"><div class="tag">06 · KEYS STAY OUT</div><h3>agent 不持私钥</h3><p>凭证存在 AgentCore Identity 的 Payment Credential Provider,签名在服务端完成——agent 拿到的只是一张证明。</p></div>
+    </div>
+    <div class="foot"><span>Three API calls replace months of payment engineering</span><span>04 / 10</span></div>
+  </section>
+
+  <!-- 05 · x402 -->
+  <section class="slide" style="padding:0">
+    <div class="split">
+      <div class="half paint">
+        <div class="eyebrow reveal">THE PROTOCOL</div>
+        <h2 class="reveal" style="font-size:96px;margin-top:20px">让 HTTP 402<br>真正<u style="text-decoration-thickness:2px;text-underline-offset:8px">有用</u></h2>
+        <p class="reveal" style="font-size:26px;line-height:1.55;margin-top:28px;max-width:560px">一个开放、中立的互联网原生支付标准。付款是<b>协议的一部分</b>,不是产品上的一个模块。</p>
+        <div class="reveal" style="margin-top:auto;border-top:1px solid rgba(255,255,255,.28);padding-top:24px;font-family:var(--mono);font-size:18px;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.8)">
+          exact = 固定价 &nbsp;·&nbsp; upto = 签一个上限,按实际用量结算
+        </div>
+      </div>
+      <div class="half">
+        <div class="eyebrow">BUYERS AND MERCHANTS</div>
+        <div class="rows">
+          <div class="r"><div class="idx">01</div><div><h3>Buyers · 人 或 agent</h3><p>不注册账号、不走人工付款流程,就能访问付费服务。遇到 402 自己签名、带证明重试,整个过程没有人点确认。</p></div></div>
+          <div class="r"><div class="idx">02</div><div><h3>Merchants · API 与内容</h3><p>几行代码把端点变成可编程收款:定价写在路由上,链上结算成功之后才执行业务逻辑——先收钱,再服务。</p></div></div>
+        </div>
+        <div class="foot" style="margin-top:34px"><span>x402.org · HTTP-native</span><span>05 / 10</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 06 · 六个组件 -->
+  <section class="slide">
+    <div class="head">
+      <div class="reveal eyebrow">HOW IT WORKS · RESOURCES</div>
+      <h2 class="reveal">六个组件各管什么</h2>
+      <p class="reveal lede">前三个在控制面,建一次就不用再碰;后三个在数据面,每个用户、每次运行、每次调用都会用到。</p>
+    </div>
+    <div class="chain stag">
+      <div class="node"><div class="ix">CONTROL</div><div class="nm">PaymentManager</div><p>账号里的支付权威:一切支付操作的顶层资源与配置边界。</p></div>
+      <div class="node"><div class="ix">CONTROL</div><div class="nm">PaymentConnector</div><p>连到具体钱包提供商的配置:Coinbase CDP 或 Stripe(Privy)。</p></div>
+      <div class="node"><div class="ix">IDENTITY</div><div class="nm">CredentialProvider</div><p>AgentCore Identity 里的专用凭证库,存 provider 密钥——不进环境变量。</p></div>
+      <div class="node"><div class="ix">DATA · PER USER</div><div class="nm">PaymentInstrument</div><p>每个用户一个嵌入式钱包,绑定一条链;agent 代表该用户付款。</p></div>
+      <div class="node"><div class="ix">DATA · PER RUN</div><div class="nm">PaymentSession</div><p>一次交互的支出上下文:可设预算与过期时间(15–480 分钟)。</p></div>
+      <div class="node hot"><div class="ix">DATA · PER CALL</div><div class="nm">ProcessPayment</div><p>真正干活的那个:校验限额、解析网络、构造并签名交易、返回支付证明。</p></div>
+    </div>
+    <div class="foot"><span>Control plane once · data plane per user, per run, per call</span><span>06 / 10</span></div>
+  </section>
+
+  <!-- 07 · 运行时流程 -->
+  <section class="slide is-dark">
+    <div class="head">
+      <div class="reveal eyebrow">HOW IT WORKS · RUNTIME FLOW</div>
+      <h2 class="reveal">一次付费调用</h2>
+    </div>
+    <div class="steps stag">
+      <div class="st"><div class="bullet"></div><div class="n">01</div><div class="t">调用付费工具</div><div class="d">agent 像调普通工具一样发起请求,不知道也不需要知道要付钱</div></div>
+      <div class="st"><div class="bullet"></div><div class="n">02</div><div class="t">402 Payment Required</div><div class="d">Merchant 回 challenge:scheme、network、收款地址、金额(在 body 或 <span class="mono">PAYMENT-REQUIRED</span> 头里)</div></div>
+      <div class="st"><div class="bullet"></div><div class="n">03</div><div class="t">ProcessPayment</div><div class="d">限额校验 → 网络解析 → 构造交易 → 钱包提供商签名 → 生成支付证明</div></div>
+      <div class="st"><div class="bullet"></div><div class="n">04</div><div class="t">带证明重试</div><div class="d">v1 用 <span class="mono">X-PAYMENT</span>,v2 用 <span class="mono">PAYMENT-SIGNATURE</span>;必须新建 client,证明约 60 秒有效</div></div>
+      <div class="st hot"><div class="bullet"></div><div class="n">05</div><div class="t">结算并返回内容</div><div class="d">facilitator 在链上结算稳定币,Merchant 确认后才执行工具,agent 拿到结果</div></div>
+    </div>
+    <div class="foot"><span>The agent never holds a private key</span><span>07 / 10</span></div>
+  </section>
+
+  <!-- 08 · 我们的 demo -->
+  <section class="slide">
+    <div class="head">
+      <div class="reveal eyebrow">OUR DEMO · MEASURED, NOT MOCKED</div>
+      <h2 class="reveal">我们把它真跑通了</h2>
+      <p class="reveal lede">问一句"比特币现在多少钱",agent 自己付 <b>0.001 USDC</b> 买到报价——中间没有人点确认。</p>
+    </div>
+    <div class="arch reveal">
+      <div class="row">
+        <div class="box"><div class="l">USER · BROWSER</div><div class="v">Privy 登录 + 委托签名</div></div>
+        <div class="box"><div class="l">CLOUDFRONT</div><div class="v">SPA + /api/*</div></div>
+        <div class="box"><div class="l">ALB + FARGATE</div><div class="v">SSE 逐帧转发</div></div>
+        <div class="box"><div class="l">AGENTCORE RUNTIME</div><div class="v">Claude Agent SDK</div></div>
+        <div class="box hot"><div class="l">AGENTCORE GATEWAY</div><div class="v">MCP · AWS_IAM inbound</div></div>
+        <div class="box"><div class="l">MERCHANT · LAMBDA</div><div class="v">x402 资源服务器</div></div>
+      </div>
+      <div class="side">
+        <span class="chip">AgentCore Payments · ProcessPayment</span>
+        <span class="chip">AgentCore Identity · 凭证</span>
+        <span>身份取自校验过的 Privy token,每个用户用自己委托的钱包</span>
+      </div>
+    </div>
+    <div class="kpis stag">
+      <div class="kpi"><div class="num">19.989</div><div class="lab">付款钱包链上 USDC 余额(devnet)——从 20 起,已真实花掉 0.011</div></div>
+      <div class="kpi"><div class="num">4 tools</div><div class="lab">经 Gateway <span class="mono">tools/list</span> 发现,目录不是代码里硬编码的副本</div></div>
+      <div class="kpi"><div class="num">$77,515</div><div class="lab">最近一次付费查询拿到的 BTC 报价,结算完成后才返回</div></div>
+    </div>
+    <div class="foot"><span>Trace 里每一步都是观察到的事实:工具名 · 402 要价 · payment id · 链上 tx</span><span>08 / 10</span></div>
+  </section>
+
+  <!-- 09 · Merchants:做一个付费 MCP 市场 -->
+  <section class="slide">
+    <div class="head">
+      <div class="reveal eyebrow">MERCHANTS · A PAID MCP MARKETPLACE</div>
+      <h2 class="reveal">Merchants 怎么做</h2>
+      <p class="reveal lede">没有注册流程、没有 API key、没有配额表——定价只是路由上的一个数字。</p>
+    </div>
+    <div class="grid g3x2 stag" style="flex:1;margin-top:30px">
+      <div class="card"><div class="tag">01 · SERVE MCP</div><h3>工具做成 MCP server</h3><p>实现 <span class="mono">initialize</span> / <span class="mono">tools/list</span> / <span class="mono">tools/call</span>;inputSchema 写清楚,Buyers 的 agent 靠它读懂怎么调。</p></div>
+      <div class="card"><div class="tag">02 · PRICE THE ROUTE</div><h3>付费路由前挂 x402</h3><p>中间件放在业务逻辑之前,定价就是一个数字;未付款先回 402 + challenge。</p></div>
+      <div class="card hot"><div class="tag">03 · 402 IN THE PAYLOAD</div><h3>challenge 与证明都走 MCP 载荷</h3><p>challenge 放 <span class="mono">structuredContent</span>,并接受 <span class="mono">headers</span> 参数带回证明——Gateway 转发参数但不能注入 HTTP 头,这是能穿过它的唯一办法。</p></div>
+      <div class="card"><div class="tag">04 · BE DISCOVERABLE</div><h3>挂成 Gateway target</h3><p>建 <span class="mono">mcpServer</span> target 指向你的 <span class="mono">/mcp</span>;任何接入该 Gateway 的 agent <span class="mono">tools/list</span> 就能发现你。</p></div>
+      <div class="card"><div class="tag">05 · GET PAID</div><h3>收款地址备好稳定币账户</h3><p><span class="mono">payTo</span> 要能接收 USDC(链上没有对应代币账户时,结算会一直失败)。测试网先用 Base Sepolia 或 Solana devnet。</p></div>
+      <div class="card tint"><div class="tag">06 · ONE IMPLEMENTATION</div><h3>人和 agent 共用一套</h3><p>人走 HTTP、agent 走 MCP,而定价、校验、结算只有一份代码——不会分裂成两套各自漂移的逻辑。</p></div>
+    </div>
+    <div class="foot"><span>Settle first, then serve</span><span>09 / 10</span></div>
+  </section>
+
+  <!-- 10 · Buyers 三步 + takeaway -->
+  <section class="slide" style="padding:0">
+    <div class="split">
+      <div class="half paint">
+        <div class="eyebrow reveal">TAKEAWAY</div>
+        <h2 class="reveal" style="font-size:104px;margin-top:20px">先结算<br>再<u style="text-decoration-thickness:2px;text-underline-offset:8px">服务</u></h2>
+        <p class="reveal" style="font-size:26px;line-height:1.55;margin-top:28px;max-width:560px">没有坏账,没有账号体系,没有人在环里点确认。限额与可观测让自主消费保持可控。</p>
+        <div class="reveal" style="margin-top:auto;border-top:1px solid rgba(255,255,255,.28);padding-top:24px;font-family:var(--mono);font-size:18px;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.8)">
+          boto3 · AgentCore SDK · Strands plugin · LangGraph middleware
+        </div>
+      </div>
+      <div class="half">
+        <div class="eyebrow">BUYERS · START HERE</div>
+        <div class="rows">
+          <div class="r"><div class="idx">01</div><div><h3>Buyers 建一次控制面</h3><p>PaymentManager + Connector + Credential Provider,整个账号一次搞定。</p></div></div>
+          <div class="r"><div class="idx">02</div><div><h3>每用户一个钱包</h3><p>建 PaymentInstrument,前端 SDK 让用户充值并委托签名。测试网免费:Base Sepolia 或 Solana devnet。</p></div></div>
+          <div class="r"><div class="idx">03</div><div><h3>调用时开 Session</h3><p>设预算与过期时间,遇 402 调 ProcessPayment,带证明重试。三个 API 调用替掉几个月支付工程。</p></div></div>
+        </div>
+        <div class="shots stag">
+          <div class="shot"><img src="assets/coinbase-cdp.png" alt="Coinbase CDP 控制台"><div class="cap">CDP · API keys</div></div>
+          <div class="shot"><img src="assets/delegated-signing.png" alt="启用委托签名"><div class="cap">Delegated signing</div></div>
+          <div class="shot"><img src="assets/privy-frontend.png" alt="Privy 前端 SDK"><div class="cap">Privy front-end SDK</div></div>
+        </div>
+        <div class="foot" style="margin-top:26px"><span>docs.aws.amazon.com/bedrock-agentcore</span><span>10 / 10</span></div>
+      </div>
+    </div>
+  </section>
+
+  </main>
+</div>
+
+<div class="deck-controls">
+  <span id="pageNum">01</span>
+  <span class="track"><span class="fill" id="progressFill"></span></span>
+  <span id="pageTotal">11</span>
+</div>
+
+<div class="edit-hotzone"></div>
+<button class="edit-toggle" id="editToggle" title="编辑模式 (E)">EDIT</button>
+
+<script>
+class SlidePresentation {
+  constructor(){
+    this.slides=[...document.querySelectorAll('.slide')];
+    this.stage=document.getElementById('deckStage');
+    this.current=0;
+    this.setupStageScale();
+    this.setupKeyboardNav();
+    this.setupTouchNav();
+    this.setupWheelNav();
+    document.getElementById('pageTotal').textContent=String(this.slides.length).padStart(2,'0');
+    this.show(0);
+  }
+  setupStageScale(){
+    const scale=()=>{
+      const f=Math.min(window.innerWidth/1920, window.innerHeight/1080);
+      const x=(window.innerWidth-1920*f)/2, y=(window.innerHeight-1080*f)/2;
+      this.stage.style.transform=`translate(${x}px, ${y}px) scale(${f})`;
+    };
+    scale(); window.addEventListener('resize',scale);
+  }
+  setupKeyboardNav(){
+    window.addEventListener('keydown',e=>{
+      if(document.body.classList.contains('editing') && e.key!=='Escape') return;
+      if(['ArrowRight','ArrowDown',' ','PageDown'].includes(e.key)){e.preventDefault();this.next();}
+      else if(['ArrowLeft','ArrowUp','PageUp'].includes(e.key)){e.preventDefault();this.prev();}
+      else if(e.key==='Home'){this.show(0);}
+      else if(e.key==='End'){this.show(this.slides.length-1);}
+    });
+  }
+  setupTouchNav(){
+    let x0=null;
+    window.addEventListener('touchstart',e=>{x0=e.touches[0].clientX;},{passive:true});
+    window.addEventListener('touchend',e=>{
+      if(x0===null)return;
+      const dx=e.changedTouches[0].clientX-x0;
+      if(Math.abs(dx)>50){ dx<0?this.next():this.prev(); }
+      x0=null;
+    },{passive:true});
+  }
+  setupWheelNav(){
+    let lock=false;
+    window.addEventListener('wheel',e=>{
+      if(lock || Math.abs(e.deltaY)<24)return;
+      lock=true; e.deltaY>0?this.next():this.prev();
+      setTimeout(()=>{lock=false;},520);
+    },{passive:true});
+  }
+  next(){this.show(this.current+1);}
+  prev(){this.show(this.current-1);}
+  show(i){
+    this.current=Math.max(0,Math.min(i,this.slides.length-1));
+    this.slides.forEach((s,n)=>{
+      s.classList.toggle('active',n===this.current);
+      s.classList.toggle('visible',n===this.current);
+    });
+    document.getElementById('pageNum').textContent=String(this.current+1).padStart(2,'0');
+    document.getElementById('progressFill').style.width=((this.current+1)/this.slides.length*100)+'%';
+  }
+}
+const deck=new SlidePresentation();
+
+/* --- inline editing: hover the top-left hotzone, or press E ---
+   Text is persisted per element as PLAIN TEXT (textContent), never as stored markup:
+   restoring saved HTML into innerHTML would re-inject whatever was in localStorage. */
+const EDIT_SELECTOR='.slide h1,.slide h2,.slide h3,.slide p,.slide li,.slide .d,.slide .t,.slide .v,.slide .lab,.slide .num,.slide .tag,.slide .big,.slide .cap';
+const editor={
+  isActive:false,
+  fields(){ return [...document.querySelectorAll(EDIT_SELECTOR)]; },
+  toggle(){
+    this.isActive=!this.isActive;
+    document.body.classList.toggle('editing',this.isActive);
+    document.getElementById('editToggle').classList.toggle('active',this.isActive);
+    this.fields().forEach(el=>{ el.contentEditable=this.isActive?'true':'false'; });
+    if(!this.isActive) this.save();
+  },
+  save(){
+    try{
+      const data={};
+      this.fields().forEach((el,i)=>{ data[i]=el.textContent; });
+      localStorage.setItem('acp-deck-text',JSON.stringify(data));
+    }catch(e){}
+  },
+  restore(){
+    try{
+      const raw=localStorage.getItem('acp-deck-text');
+      if(!raw) return;
+      const data=JSON.parse(raw);
+      this.fields().forEach((el,i)=>{
+        if(typeof data[i]==='string' && data[i]!==el.textContent) el.textContent=data[i];
+      });
+    }catch(e){}
+  }
+};
+editor.restore();
+
+const hotzone=document.querySelector('.edit-hotzone');
+const editToggle=document.getElementById('editToggle');
+let hideTimeout=null;
+const hide=()=>{ hideTimeout=setTimeout(()=>{ if(!editor.isActive) editToggle.classList.remove('show'); },400); };
+hotzone.addEventListener('mouseenter',()=>{clearTimeout(hideTimeout);editToggle.classList.add('show');});
+hotzone.addEventListener('mouseleave',hide);
+editToggle.addEventListener('mouseenter',()=>clearTimeout(hideTimeout));
+editToggle.addEventListener('mouseleave',hide);
+editToggle.addEventListener('click',()=>editor.toggle());
+window.addEventListener('keydown',e=>{
+  if(e.key==='e' && !editor.isActive){ editToggle.classList.add('show'); editor.toggle(); }
+  else if(e.key==='Escape' && editor.isActive){ editor.toggle(); }
+  else if(e.key==='s' && (e.metaKey||e.ctrlKey) && editor.isActive){ e.preventDefault(); editor.save(); }
+});
+</script>
+</body>
+</html>

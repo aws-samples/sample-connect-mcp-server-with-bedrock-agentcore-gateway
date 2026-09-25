@@ -1,0 +1,103 @@
+rules:
+  - id: python-dynamic-code-execution
+    message: Dynamic code execution can allow arbitrary code injection.
+    severity: ERROR
+    languages: [python]
+    metadata:
+      category: security
+      technology: [python]
+      subcategory: vuln
+      impact: HIGH
+      likelihood: MEDIUM
+      confidence: HIGH
+    pattern-either:
+      - pattern: eval(...)
+      - pattern: exec(...)
+
+  - id: python-shell-command-execution
+    message: Shell command execution can allow command injection.
+    severity: ERROR
+    languages: [python]
+    metadata:
+      category: security
+      technology: [python]
+      subcategory: vuln
+      impact: HIGH
+      likelihood: MEDIUM
+      confidence: HIGH
+    pattern-either:
+      - pattern: os.system(...)
+      - pattern: subprocess.$FUNC(..., shell=True, ...)
+
+  - id: python-unsafe-yaml-load
+    message: Use yaml.safe_load instead of yaml.load.
+    severity: ERROR
+    languages: [python]
+    metadata:
+      category: security
+      technology: [python, pyyaml]
+      subcategory: vuln
+      impact: HIGH
+      likelihood: MEDIUM
+      confidence: HIGH
+    patterns:
+      - pattern: yaml.load(...)
+      - pattern-not: yaml.load(..., Loader=yaml.SafeLoader, ...)
+
+  - id: python-unsafe-deserialization
+    message: Loading untrusted pickle data can execute arbitrary code.
+    severity: ERROR
+    languages: [python]
+    metadata:
+      category: security
+      technology: [python]
+      subcategory: vuln
+      impact: HIGH
+      likelihood: MEDIUM
+      confidence: HIGH
+    pattern-either:
+      - pattern: pickle.load(...)
+      - pattern: pickle.loads(...)
+
+  - id: python-disabled-tls-verification
+    message: TLS certificate verification must not be disabled.
+    severity: ERROR
+    languages: [python]
+    metadata:
+      category: security
+      technology: [python, requests, httpx]
+      subcategory: vuln
+      impact: MEDIUM
+      likelihood: MEDIUM
+      confidence: HIGH
+    pattern-either:
+      - pattern: requests.$METHOD(..., verify=False, ...)
+      - pattern: httpx.$METHOD(..., verify=False, ...)
+
+  - id: javascript-shell-command-execution
+    message: Avoid executing shell command strings from application code.
+    severity: ERROR
+    languages: [js, ts]
+    metadata:
+      category: security
+      technology: [javascript, typescript, node.js]
+      subcategory: vuln
+      impact: HIGH
+      likelihood: MEDIUM
+      confidence: HIGH
+    pattern-either:
+      - pattern: child_process.exec(...)
+      - pattern: child_process.execSync(...)
+
+  - id: react-dangerously-set-inner-html
+    message: dangerouslySetInnerHTML can introduce cross-site scripting.
+    severity: ERROR
+    languages: [js, ts]
+    metadata:
+      category: security
+      technology: [javascript, typescript, react]
+      subcategory: vuln
+      impact: HIGH
+      likelihood: MEDIUM
+      confidence: HIGH
+    pattern: <$ELEMENT ... dangerouslySetInnerHTML=$VALUE ... />

@@ -1,0 +1,33 @@
+{
+  "name": "agentcore-x402-delegation-web",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@privy-io/react-auth": "3.42.0",
+    "@solana-program/memo": "0.8.0",
+    "@solana-program/system": "0.8.1",
+    "@solana-program/token": "0.6.0",
+    "@solana/kit": "3.0.3",
+    "buffer": "6.0.3",
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
+  },
+  "devDependencies": {
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.5",
+    "@vitejs/plugin-react": "6.1.1",
+    "typescript": "7.0.2",
+    "vite": "8.2.2"
+  },
+  "overrides": {
+    "axios": "1.20.0",
+    "uuid": "11.1.1",
+    "ws@8": "8.21.3"
+  }
+}

@@ -1,0 +1,54 @@
+{
+  "version": 1,
+  "required_categories": [
+    "external-endpoint",
+    "sample-configuration",
+    "credential-auth",
+    "custom-header",
+    "access-control"
+  ],
+  "rules": [
+    {
+      "id": "external-endpoint-fallback",
+      "category": "external-endpoint",
+      "title": "External service endpoint has a plausible fallback",
+      "patterns": [
+        "(?i)(?:base[_-]?url|endpoint|host|server).{0,120}(?:getenv|environ\\.get|process\\.env|config\\.get|get\\().{0,120}(?:,|\\bor\\b|\\|\\||\\?\\?).{0,120}(?:https?://|localhost|127\\.0\\.0\\.1)"
+      ]
+    },
+    {
+      "id": "sample-configuration-fallback",
+      "category": "sample-configuration",
+      "title": "Runtime or deployment references sample configuration",
+      "patterns": [
+        "(?i)(?:settings[._-]?sample|sample[._-]?settings|example[._-]?config|config[._-]?example)"
+      ]
+    },
+    {
+      "id": "credential-or-auth-fallback",
+      "category": "credential-auth",
+      "title": "Credential or authentication setting has a fallback",
+      "patterns": [
+        "(?i)(?:secret|token|password|credential|authorization|auth).{0,120}(?:getenv|environ\\.get|process\\.env|config\\.get|get\\().{0,120}(?:,|\\bor\\b|\\|\\||\\?\\?)"
+      ]
+    },
+    {
+      "id": "custom-security-header",
+      "category": "custom-header",
+      "title": "Custom header may require end-to-end propagation",
+      "patterns": [
+        "(?i)[\"']x-[a-z0-9][a-z0-9-]+[\"']"
+      ]
+    },
+    {
+      "id": "permissive-access-fallback",
+      "category": "access-control",
+      "title": "Access control can default to a permissive state",
+      "patterns": [
+        "(?i)(?:allow[_-]?(?:unassigned|anonymous|public)|require[_-]?auth|skip[_-]?auth|allow[_-]?origins?).{0,120}(?:getenv|get\\().{0,120}(?:true|false|[\"']\\*[\"'])",
+        "(?i)(?:allow[_-]?origins|access-control-allow-origin).{0,80}[\"']\\*[\"']",
+        "(?i)(?:verify[_-]?(?:ssl|tls)|tls[_-]?verify|certificate[_-]?verification).{0,80}(?:false|0|disabled)"
+      ]
+    }
+  ]
+}

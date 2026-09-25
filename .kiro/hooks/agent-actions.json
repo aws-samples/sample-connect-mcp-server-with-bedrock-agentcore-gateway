@@ -1,0 +1,23 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Review current diff in this session",
+      "description": "Append an on-demand semantic-review prompt to the current profile; use scripts/review/review-session-diff.sh for an independent read-only reviewer process.",
+      "trigger": "Manual",
+      "action": {
+        "type": "agent",
+        "prompt": "Review the current diff using the loaded steering rules. Verify every finding, cite exact evidence, and report CLEAN when no finding survives verification. This action runs in the current profile; do not modify files during this review."
+      }
+    },
+    {
+      "name": "Check acceptance-criteria coverage in this session",
+      "description": "Append an on-demand AC-to-test gap-check prompt to the current profile; use the qa profile for the dedicated QA workflow.",
+      "trigger": "Manual",
+      "action": {
+        "type": "agent",
+        "prompt": "Map every acceptance criterion in product-context.md to a proving test in tests/acceptance/. Report P0 and P1 gaps; do not perform a general code review or modify files during this check. This action runs in the current profile."
+      }
+    }
+  ]
+}

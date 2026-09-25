@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>付费 MCP · 技术上要提供什么 · 和普通 MCP 的差别</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- Display/body use the Google-hosted CJK families below, with system fallbacks. -->
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500&family=Noto+Serif+SC:wght@300;500&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --stage-bg:#151320;
+  --slide-bg:#FBFAFD;
+  --ink:#141221;
+  --ink-2:#4A4560;
+  --ink-3:#7C7694;
+  --accent:#8C4FFF;              /* AWS purple */
+  --accent-deep:#5B21C7;
+  --accent-tint-2:#F8F4FF;
+  --line:#E4DFF0;
+
+  --display:"Noto Serif SC",Georgia,serif;
+  --body:"Noto Sans SC",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,monospace;
+
+  --pad-x:104px;
+  --pad-y:76px;
+  --ease:cubic-bezier(.16,1,.3,1);
+  --dur:.62s;
+}
+
+*{margin:0;padding:0;box-sizing:border-box}
+
+/* ===== viewport-base.css (verbatim — required by the skill) ===== */
+html,body{width:100%;height:100%;margin:0;overflow:hidden;background:var(--stage-bg,#000)}
+.deck-viewport{position:fixed;inset:0;overflow:hidden;background:var(--stage-bg,#000)}
+.deck-stage{position:absolute;left:0;top:0;width:1920px;height:1080px;overflow:hidden;transform-origin:0 0;background:var(--slide-bg,#fff)}
+.slide{position:absolute;inset:0;width:1920px;height:1080px;overflow:hidden;display:block;visibility:hidden;opacity:0;pointer-events:none;background:var(--slide-bg,#fff)}
+.slide.active,.slide.visible{visibility:visible;opacity:1;pointer-events:auto;z-index:1}
+img,video,canvas,svg{max-width:100%;max-height:100%}
+.deck-controls{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:1000}
+@media print{
+  html,body{width:1920px;height:auto;overflow:visible;background:#fff}
+  .deck-viewport{position:static;overflow:visible;background:#fff}
+  .deck-stage{position:static;width:auto;height:auto;transform:none!important;background:none}
+  .slide{position:relative;display:block!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important;width:1920px;height:1080px;break-after:page;page-break-after:always}
+  .slide:last-child{break-after:auto;page-break-after:auto}
+  .deck-controls{display:none!important}
+}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.2s!important}}
+/* ===== end viewport-base.css ===== */
+
+.slide{
+  font-family:var(--body);color:var(--ink);
+  padding:var(--pad-y) var(--pad-x);
+  display:flex;flex-direction:column;
+  /* atmosphere: faint lattice + one soft purple bloom, not a flat fill */
+  background:
+    radial-gradient(1100px 620px at 100% -12%, rgba(140,79,255,.10), transparent 65%),
+    radial-gradient(760px 520px at -8% 108%, rgba(140,79,255,.055), transparent 60%),
+    repeating-linear-gradient(0deg,rgba(20,18,33,.035) 0 1px,transparent 1px 44px),
+    repeating-linear-gradient(90deg,rgba(20,18,33,.035) 0 1px,transparent 1px 44px),
+    var(--slide-bg);
+}
+.slide.is-dark{
+  --ink:#F6F3FF;--ink-2:#C7BEE4;--ink-3:#9C93BE;--line:rgba(255,255,255,.16);
+  --accent-tint-2:rgba(140,79,255,.10);
+  color:#F6F3FF;
+  background:
+    radial-gradient(1200px 700px at 88% -10%, rgba(140,79,255,.42), transparent 62%),
+    repeating-linear-gradient(0deg,rgba(255,255,255,.035) 0 1px,transparent 1px 44px),
+    repeating-linear-gradient(90deg,rgba(255,255,255,.035) 0 1px,transparent 1px 44px),
+    #171426;
+}
+
+/* --- type --- */
+.eyebrow{font-family:var(--mono);font-size:19px;letter-spacing:.22em;text-transform:uppercase;color:var(--accent-deep);font-weight:500}
+.is-dark .eyebrow{color:#C9A9FF}
+h1{font-family:var(--display);font-weight:300;font-size:112px;line-height:1.02;letter-spacing:-.02em}
+h2{font-family:var(--display);font-weight:300;font-size:70px;line-height:1.06;letter-spacing:-.018em;margin-top:14px}
+h3{font-family:var(--display);font-weight:400;font-size:33px;line-height:1.2}
+.lede{font-size:29px;line-height:1.5;color:var(--ink-2);max-width:1180px;margin-top:20px;font-weight:400}
+.mono{font-family:var(--mono);font-size:.92em}
+em{color:var(--accent-deep);font-style:italic}
+.is-dark em{color:#C9A9FF}
+.hair{height:1px;background:var(--line);margin:30px 0}
+.foot{margin-top:auto;display:flex;justify-content:space-between;align-items:flex-end;
+  font-family:var(--mono);font-size:18px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);
+  border-top:1px solid var(--line);padding-top:22px}
+.head{display:flex;flex-direction:column;gap:6px}
+
+/* --- grids & cards --- */
+.grid{display:grid;gap:24px;margin-top:38px}
+.g3{grid-template-columns:repeat(3,1fr)}
+.g3x2{grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(2,1fr)}
+.card{background:#fff;border:1px solid var(--line);border-radius:2px;padding:30px 30px 26px;display:flex;flex-direction:column;gap:12px;
+  box-shadow:0 1px 0 rgba(20,18,33,.03)}
+.is-dark .card{background:rgba(255,255,255,.045);border-color:var(--line);box-shadow:none}
+.card .tag{font-family:var(--mono);font-size:17px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3)}
+.card p{font-size:21px;line-height:1.56;color:var(--ink-2)}
+.card.hot{background:var(--accent);border-color:var(--accent);color:#fff}
+.card.hot .tag{color:rgba(255,255,255,.78)}
+.card.hot p{color:rgba(255,255,255,.94)}
+.card.hot h3{color:#fff}
+.card.tint{background:var(--accent-tint-2);border-color:#E3D6FF}
+
+/* --- two-column compare --- */
+.duo{display:grid;grid-template-columns:1fr 1px 1fr;gap:0 60px;margin-top:44px;flex:1}
+.duo .vr{background:var(--line)}
+.duo .col{display:flex;flex-direction:column;gap:16px}
+.duo .badge{display:inline-flex;align-items:center;gap:14px;font-family:var(--mono);font-size:18px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3)}
+.duo .badge b{font-family:var(--display);font-size:26px;letter-spacing:0;color:var(--ink);font-weight:500;
+  border:1px solid var(--ink);padding:2px 14px;border-radius:2px}
+.duo .col.hot .badge b{color:var(--accent-deep);border-color:var(--accent)}
+.duo .big{font-family:var(--display);font-size:64px;font-weight:300;line-height:1.05;letter-spacing:-.02em}
+.duo .col.hot .big{color:var(--accent-deep)}
+.duo p{font-size:23px;line-height:1.55;color:var(--ink-2);max-width:640px}
+.duo ul{list-style:none;display:flex;flex-direction:column;gap:12px;margin-top:auto;border-top:1px solid var(--line);padding-top:22px}
+.duo li{font-size:21px;line-height:1.5;padding-left:26px;position:relative;color:var(--ink-2)}
+.duo li::before{content:"";position:absolute;left:0;top:.72em;width:12px;height:1px;background:var(--ink-3)}
+.duo .col.hot li::before{background:var(--accent)}
+
+/* --- component chain --- */
+.chain{display:grid;grid-template-columns:repeat(6,1fr);margin-top:46px;flex:1;align-items:stretch}
+.chain .node{position:relative;padding:26px 22px;border:1px solid var(--line);border-right:0;background:#fff;display:flex;flex-direction:column;gap:10px}
+.chain .node:last-child{border-right:1px solid var(--line)}
+.chain .node.hot{background:var(--accent);border-color:var(--accent)}
+.chain .node.hot .nm,.chain .node.hot p,.chain .node.hot .ix{color:#fff}
+.chain .ix{font-family:var(--mono);font-size:16px;letter-spacing:.16em;color:var(--ink-3)}
+.chain .nm{font-family:var(--mono);font-size:21px;font-weight:500;color:var(--ink);line-height:1.25}
+.chain p{font-size:19px;line-height:1.5;color:var(--ink-2)}
+.chain .node::after{content:"";position:absolute;right:-9px;top:50%;width:16px;height:16px;
+  border-top:1px solid var(--ink-3);border-right:1px solid var(--ink-3);transform:translateY(-50%) rotate(45deg);z-index:2}
+.chain .node:last-child::after{display:none}
+
+/* --- horizontal steps --- */
+.steps{margin-top:52px;flex:1;display:grid;grid-template-columns:repeat(5,1fr);align-items:start;position:relative}
+.steps::before{content:"";position:absolute;left:6%;right:6%;top:26px;height:1px;
+  background:repeating-linear-gradient(90deg,var(--ink-3) 0 6px,transparent 6px 12px);opacity:.5}
+.steps .st{display:flex;flex-direction:column;align-items:center;text-align:center;padding:0 20px;gap:14px}
+.steps .bullet{width:14px;height:14px;background:var(--ink);margin-top:19px;position:relative;z-index:2;transform:rotate(45deg)}
+.steps .st.hot .bullet{background:var(--accent)}
+.steps .n{font-family:var(--mono);font-size:17px;letter-spacing:.18em;color:var(--ink-3)}
+.steps .st.hot .n{color:var(--accent-deep)}
+.is-dark .steps .st.hot .n{color:#C9A9FF}
+.steps .t{font-family:var(--display);font-size:31px;font-weight:400;line-height:1.15}
+.steps .d{font-size:19.5px;line-height:1.55;color:var(--ink-2)}
+
+/* --- architecture --- */
+.arch{margin-top:40px;display:flex;flex-direction:column;gap:22px}
+.arch .row{display:flex;align-items:stretch}
+.arch .box{flex:1;border:1px solid var(--line);background:#fff;padding:20px;display:flex;flex-direction:column;gap:6px;position:relative}
+.arch .box + .box{border-left:0}
+.arch .box .l{font-family:var(--mono);font-size:15.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3)}
+.arch .box .v{font-size:22px;line-height:1.3;font-weight:500}
+.arch .box.hot{background:var(--accent);border-color:var(--accent)}
+.arch .box.hot .l{color:rgba(255,255,255,.75)}
+.arch .box.hot .v{color:#fff}
+.arch .box::after{content:"→";position:absolute;right:-11px;top:50%;transform:translateY(-50%);
+  font-family:var(--mono);font-size:20px;color:var(--ink-3);background:var(--slide-bg);padding:0 2px;z-index:3}
+.arch .box:last-child::after{display:none}
+.arch .side{display:flex;gap:18px;align-items:center;font-family:var(--mono);font-size:17px;letter-spacing:.1em;color:var(--ink-3);text-transform:uppercase}
+.arch .side .chip{border:1px dashed var(--accent);color:var(--accent-deep);padding:8px 16px;border-radius:2px;letter-spacing:.12em}
+
+/* --- KPIs --- */
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:26px}
+.kpi{border-top:2px solid var(--accent);padding-top:16px}
+.kpi .num{font-family:var(--display);font-size:56px;font-weight:300;line-height:1;letter-spacing:-.02em}
+.kpi .lab{font-size:19px;color:var(--ink-2);margin-top:8px;line-height:1.45}
+
+/* --- split slides --- */
+.split{display:grid;grid-template-columns:1fr 1fr;flex:1}
+.split .half{padding:var(--pad-y) 72px;display:flex;flex-direction:column}
+.split .half.paint{background:linear-gradient(155deg,var(--accent) 0%,var(--accent-deep) 100%);color:#fff}
+.split .half.paint h2{color:#fff}
+.split .half.paint .eyebrow{color:rgba(255,255,255,.8)}
+.split .half.paint p{color:rgba(255,255,255,.92)}
+.rows{display:flex;flex-direction:column;margin-top:auto}
+.rows .r{display:grid;grid-template-columns:96px 1fr;gap:26px;padding:22px 0;border-top:1px solid var(--line);align-items:start}
+.rows .r:last-child{border-bottom:2px solid var(--accent)}
+.rows .idx{font-family:var(--display);font-size:52px;font-weight:300;line-height:.9;color:var(--ink-3)}
+.rows .r:last-child .idx{color:var(--accent-deep)}
+.rows p{font-size:20.5px;line-height:1.55;color:var(--ink-2);margin-top:6px}
+
+/* --- screenshots --- */
+.shots{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:24px}
+.shot{border:1px solid var(--line);background:#fff;padding:10px}
+.shot img{display:block;width:100%;height:104px;object-fit:cover;object-position:top left}
+.shot .cap{font-family:var(--mono);font-size:15px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);padding-top:10px}
+
+/* --- compare table --- */
+.tbl{margin-top:40px;flex:1;display:grid;grid-template-columns:280px 1fr 1fr;border:1px solid var(--line);background:#fff}
+.tbl > div{padding:24px 26px;border-bottom:1px solid var(--line)}
+.tbl > div:nth-child(3n+1){border-right:1px solid var(--line);background:var(--accent-tint-2)}
+.tbl > div:nth-child(3n+2){border-right:1px solid var(--line)}
+.tbl > div:nth-last-child(-n+3){border-bottom:0}
+.tbl .th{font-family:var(--mono);font-size:17px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3);background:#fff!important}
+.tbl .th.hot{color:var(--accent-deep)}
+.tbl .dim{font-family:var(--display);font-size:27px;line-height:1.25}
+.tbl p{font-size:20px;line-height:1.55;color:var(--ink-2)}
+.tbl .hotcell{background:#F6F0FF!important}
+
+
+/* ================= slide 1 · spec sheet ================= */
+.spec{display:grid;grid-template-columns:0.82fr 1.18fr;gap:48px;flex:1;margin-top:26px;min-height:0}
+.spec .left{display:flex;flex-direction:column;min-height:0}
+.reqs{display:flex;flex-direction:column;margin-top:16px}
+.req{display:grid;grid-template-columns:52px 1fr;gap:18px;padding:11px 0;border-top:1px solid var(--line);align-items:baseline}
+.req:last-child{border-bottom:1px solid var(--line)}
+.req .rn{font-family:var(--mono);font-size:16px;letter-spacing:.1em;color:var(--ink-3);padding-top:4px}
+.req.mark .rn{color:#fff;background:var(--accent);text-align:center;border-radius:2px;padding:4px 0 5px}
+.req .rt{font-family:var(--display);font-size:25px;line-height:1.2;font-weight:400}
+.req .rd{font-size:17.5px;line-height:1.45;color:var(--ink-2);margin-top:4px}
+.req .rd .mono{font-size:16.5px}
+
+/* code artifact */
+.code{background:#17142A;border-radius:3px;padding:24px 28px 22px;display:flex;flex-direction:column;gap:15px;
+  box-shadow:0 26px 60px -28px rgba(91,33,199,.55), 0 0 0 1px rgba(201,169,255,.16) inset;
+  position:relative;overflow:hidden;min-height:0}
+.code::before{content:"";position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(520px 300px at 108% -14%, rgba(140,79,255,.42), transparent 62%)}
+.code .blk{position:relative;z-index:1}
+.code .cap{display:flex;align-items:center;gap:12px;margin-bottom:7px}
+.code .bdg{font-family:var(--mono);font-size:13px;letter-spacing:.1em;color:#fff;background:var(--accent);padding:3px 9px;border-radius:2px}
+.code .ct{font-family:var(--mono);font-size:15px;letter-spacing:.15em;text-transform:uppercase;color:#B9AEDC}
+.code pre{font-family:var(--mono);font-size:16.5px;line-height:1.62;color:#E8E2FF;white-space:pre;overflow:hidden}
+.code .k{color:#C9A9FF}
+.code .s{color:#93E3BE}
+.code .n{color:#FFCE86}
+.code .p{color:#8B84A8}
+.code .cm{color:#8B84A8;font-style:italic}
+.code .hl{background:rgba(140,79,255,.24);border-left:2px solid var(--accent);padding:1px 6px 1px 8px;margin-left:-10px;border-radius:0 2px 2px 0}
+.code .rule{height:1px;background:rgba(201,169,255,.16);position:relative;z-index:1}
+
+/* ================= slide 2 · broken assumptions ================= */
+.tracks{display:grid;grid-template-columns:190px 1fr 1fr;gap:0 34px;margin-top:24px;align-items:end}
+.tracks .th{font-family:var(--mono);font-size:16.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-3);padding-bottom:10px}
+.tracks .th.now{color:var(--accent-deep)}
+.tracks .th.now::before{content:"→ ";color:var(--accent)}
+
+.asm{display:flex;flex-direction:column;flex:1;min-height:0;justify-content:space-between}
+.row4{display:grid;grid-template-columns:190px 1fr 1fr;gap:0 34px;padding:26px 0;border-top:1px solid var(--line);position:relative;align-items:start}
+.row4:last-child{border-bottom:1px solid var(--line)}
+.row4 .ghost{position:absolute;left:0;top:8px;font-family:var(--display);font-size:86px;line-height:.8;font-weight:300;
+  color:var(--accent);opacity:.10;pointer-events:none;user-select:none}
+.row4 .dim{position:relative;font-family:var(--display);font-size:27px;line-height:1.2;padding-left:52px;padding-top:14px}
+.row4 .was p{font-size:19.5px;line-height:1.55;color:var(--ink-3)}
+.row4 .was .strike{text-decoration:line-through;text-decoration-color:var(--accent);text-decoration-thickness:1.5px;color:var(--ink-3)}
+.row4 .now{border-left:2px solid var(--accent);padding-left:24px}
+.row4 .now p{font-size:20.5px;line-height:1.55;color:var(--ink)}
+.row4 .now .mono,.row4 .was .mono{font-size:19px}
+.row4 .tagline{font-family:var(--mono);font-size:15.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent-deep);margin-top:8px}
+
+/* ================= slide 3 · wallets, chains, resources ================= */
+.two{display:grid;grid-template-columns:1.06fr 0.94fr;gap:56px;flex:1;margin-top:26px;min-height:0}
+.blk-h{font-family:var(--mono);font-size:16.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--accent-deep);
+  border-bottom:1px solid var(--line);padding-bottom:10px;margin-bottom:4px}
+.wal{display:grid;grid-template-columns:1fr;}
+.wrow{padding:16px 0;border-bottom:1px solid var(--line)}
+.wrow .wp{font-family:var(--display);font-size:25px;line-height:1.2}
+.wrow .wm{font-family:var(--mono);font-size:16px;color:var(--ink-3);letter-spacing:.06em;margin-top:5px}
+.wrow .wc{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.chip2{font-family:var(--mono);font-size:15.5px;padding:5px 11px;border:1px solid var(--line);border-radius:2px;color:var(--ink-2);background:#fff}
+.chip2.test{border-color:var(--accent);color:var(--accent-deep);background:#F8F4FF}
+.chip2.used{background:var(--accent);border-color:var(--accent);color:#fff}
+.wnote{font-size:17px;line-height:1.5;color:var(--ink-2);margin-top:9px}
+.res{display:flex;flex-direction:column}
+.rgrp{font-family:var(--mono);font-size:15px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3);margin:16px 0 6px}
+.ritem{display:grid;grid-template-columns:1fr;padding:9px 0;border-top:1px solid var(--line)}
+.ritem .rp{font-family:var(--mono);font-size:18px;color:var(--ink)}
+.ritem .rq{font-size:16.5px;line-height:1.45;color:var(--ink-2);margin-top:3px}
+
+/* --- cover --- */
+.cover{justify-content:space-between}
+.cover .bar{width:150px;height:6px;background:var(--accent)}
+.cover h1{font-size:132px;max-width:1400px;margin-top:26px}
+.cover .meta{display:flex;justify-content:space-between;align-items:flex-end;border-top:1px solid var(--line);padding-top:26px;
+  font-family:var(--mono);font-size:19px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3)}
+
+/* --- reveal --- */
+.reveal{opacity:0;transform:translateY(26px);transition:opacity var(--dur) var(--ease),transform var(--dur) var(--ease)}
+.slide.visible .reveal{opacity:1;transform:none}
+.slide.visible .reveal:nth-child(1){transition-delay:.05s}
+.slide.visible .reveal:nth-child(2){transition-delay:.13s}
+.slide.visible .reveal:nth-child(3){transition-delay:.21s}
+.slide.visible .reveal:nth-child(4){transition-delay:.29s}
+.stag > *{opacity:0;transform:translateY(22px);transition:opacity .5s var(--ease),transform .5s var(--ease)}
+.slide.visible .stag > *{opacity:1;transform:none}
+.slide.visible .stag > *:nth-child(1){transition-delay:.22s}
+.slide.visible .stag > *:nth-child(2){transition-delay:.30s}
+.slide.visible .stag > *:nth-child(3){transition-delay:.38s}
+.slide.visible .stag > *:nth-child(4){transition-delay:.46s}
+.slide.visible .stag > *:nth-child(5){transition-delay:.54s}
+.slide.visible .stag > *:nth-child(6){transition-delay:.62s}
+
+/* --- chrome outside the stage --- */
+.deck-controls{display:flex;align-items:center;gap:16px;font-family:var(--mono);font-size:14px;letter-spacing:.16em;color:rgba(255,255,255,.55)}
+.deck-controls .track{width:220px;height:2px;background:rgba(255,255,255,.16)}
+.deck-controls .fill{height:2px;background:var(--accent);width:0;transition:width .35s var(--ease)}
+.edit-hotzone{position:fixed;top:0;left:0;width:80px;height:80px;z-index:10000;cursor:pointer}
+.edit-toggle{position:fixed;top:16px;left:16px;z-index:10001;opacity:0;pointer-events:none;transition:opacity .3s ease;
+  background:var(--accent);color:#fff;border:0;border-radius:2px;padding:8px 12px;font-family:var(--mono);font-size:13px;cursor:pointer}
+.edit-toggle.show,.edit-toggle.active{opacity:1;pointer-events:auto}
+[contenteditable="true"]{outline:1px dashed var(--accent);outline-offset:3px}
+</style>
+</head>
+<body>
+<div class="deck-viewport">
+  <main class="deck-stage" id="deckStage">
+
+  <!-- 01 · spec sheet -->
+  <section class="slide">
+    <div class="head">
+      <div class="reveal eyebrow">MERCHANT SIDE · WHAT YOU MUST SHIP</div>
+      <h2 class="reveal" style="font-size:56px">一个付费 MCP,技术上要提供什么</h2>
+    </div>
+
+    <div class="spec">
+      <div class="left reveal">
+        <p style="font-size:19.5px;line-height:1.5;color:var(--ink-2);max-width:500px">协议、传输、工具形状都还是 MCP —— 多出来的只有<b>调用之前先付钱</b>。落到实现上是这六项;紫色编号的三项是普通 MCP 没有的。</p>
+        <div class="reqs">
+          <div class="req"><div class="rn">01</div><div><div class="rt">一个 MCP 端点</div><div class="rd"><span class="mono">POST /mcp</span> · JSON-RPC 2.0,实现 <span class="mono">initialize</span> / <span class="mono">tools/list</span> / <span class="mono">tools/call</span></div></div></div>
+          <div class="req mark"><div class="rn">02</div><div><div class="rt">schema 里留一个 <span class="mono" style="font-size:26px">headers</span></div><div class="rd">Buyers 的 agent 全靠 inputSchema 决定怎么调;这个对象参数是付款证明的回传口</div></div></div>
+          <div class="req"><div class="rn">03</div><div><div class="rt">路由前挂 x402 中间件</div><div class="rd">在业务逻辑之前声明 scheme、network、<span class="mono">payTo</span>、金额与 asset——<b>定价就是一个数字</b></div></div></div>
+          <div class="req mark"><div class="rn">04</div><div><div class="rt">402 走 MCP payload</div><div class="rd">challenge 放 <span class="mono">structuredContent</span>,再配一条文本标记兜底</div></div></div>
+          <div class="req mark"><div class="rn">05</div><div><div class="rt">结算凭证也放 payload</div><div class="rd">Gateway 会丢掉 <span class="mono">responseHeaders</span>,只写在头里 Buyers 拿不到链上凭证</div></div></div>
+          <div class="req"><div class="rn">06</div><div><div class="rt">收款账户 + Gateway target</div><div class="rd"><span class="mono">payTo</span> 需已有该稳定币代币账户;建 <span class="mono">mcpServer</span> target 让任何 agent 都能发现你</div></div></div>
+        </div>
+      </div>
+
+      <div class="code reveal">
+        <div class="blk">
+          <div class="cap"><span class="bdg">02</span><span class="ct">tools/list · one paid tool</span></div>
+<pre><span class="p">{</span> <span class="k">"name"</span><span class="p">:</span> <span class="s">"price"</span><span class="p">,</span> <span class="k">"description"</span><span class="p">:</span> <span class="s">"USD price · 0.001 USDC"</span><span class="p">,</span>
+  <span class="k">"inputSchema"</span><span class="p">: {</span> <span class="k">"type"</span><span class="p">:</span> <span class="s">"object"</span><span class="p">,</span> <span class="k">"properties"</span><span class="p">: {</span>
+      <span class="k">"coin"</span><span class="p">:</span>    <span class="p">{</span> <span class="k">"type"</span><span class="p">:</span> <span class="s">"string"</span> <span class="p">},</span>
+<span class="hl">      <span class="k">"headers"</span><span class="p">:</span> <span class="p">{</span> <span class="k">"type"</span><span class="p">:</span> <span class="s">"object"</span> <span class="p">}</span>  <span class="cm">// 付款证明回传口</span></span>
+  <span class="p">} } }</span></pre>
+        </div>
+        <div class="rule"></div>
+        <div class="blk">
+          <div class="cap"><span class="bdg">04</span><span class="ct">unpaid → payment required</span></div>
+<pre><span class="p">{</span> <span class="k">"content"</span><span class="p">: [{</span> <span class="k">"text"</span><span class="p">:</span> <span class="s">"PAYMENT_REQUIRED: {…}"</span> <span class="p">}],</span>
+<span class="hl">  <span class="k">"structuredContent"</span><span class="p">: {</span> <span class="k">"x402Version"</span><span class="p">:</span> <span class="n">2</span><span class="p">,</span></span>
+    <span class="k">"accepts"</span><span class="p">: [{</span> <span class="k">"scheme"</span><span class="p">:</span> <span class="s">"exact"</span><span class="p">,</span> <span class="k">"amount"</span><span class="p">:</span> <span class="s">"1000"</span><span class="p">,</span>
+      <span class="k">"network"</span><span class="p">:</span> <span class="s">"solana:EtWT…"</span><span class="p">,</span> <span class="k">"payTo"</span><span class="p">:</span> <span class="s">"6m9U…"</span><span class="p">,</span>
+      <span class="k">"asset"</span><span class="p">:</span> <span class="s">"4zMM…USDC"</span> <span class="p">}] } }</span></pre>
+        </div>
+        <div class="rule"></div>
+        <div class="blk">
+          <div class="cap"><span class="bdg">05</span><span class="ct">paid → result + receipt</span></div>
+<pre><span class="p">{</span> <span class="k">"structuredContent"</span><span class="p">: {</span> <span class="k">"coin"</span><span class="p">:</span> <span class="s">"bitcoin"</span><span class="p">,</span> <span class="k">"usd"</span><span class="p">:</span> <span class="n">77515</span><span class="p">,</span>
+<span class="hl">    <span class="k">"_x402"</span><span class="p">: {</span> <span class="k">"success"</span><span class="p">:</span> <span class="n">true</span><span class="p">,</span> <span class="k">"transaction"</span><span class="p">:</span> <span class="s">"3Q3XLo…"</span> <span class="p">}</span></span>
+  <span class="p">} }</span></pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="foot"><span>facilitator: x402.org 或自建 · 测试网 Base Sepolia / Solana devnet</span><span>01 / 03</span></div>
+  </section>
+
+  <!-- 02 · broken assumptions -->
+  <section class="slide">
+    <div class="head">
+      <div class="reveal eyebrow">PAID MCP vs ORDINARY MCP</div>
+      <h2 class="reveal" style="font-size:56px">四个假设被"先付钱"打破</h2>
+    </div>
+
+    <div class="tracks reveal">
+      <div class="th">维度</div>
+      <div class="th">普通 MCP 的假设</div>
+      <div class="th now">付费 MCP 换成了什么</div>
+    </div>
+
+    <div class="asm stag">
+      <div class="row4">
+        <div class="ghost">01</div>
+        <div class="dim">调用结果</div>
+        <div class="was"><p>一次 <span class="mono">tools/call</span> <span class="strike">只有成功或报错两种归宿</span>,客户端照着这两种写分支就够了。</p></div>
+        <div class="now"><p>多出第三种:<b>要求付款</b>。challenge 在 <span class="mono">structuredContent</span> 里,客户端据此去<b>签名</b>,而不是当成错误上报。</p><div class="tagline">OK / ERROR / PAY-FIRST</div></div>
+      </div>
+
+      <div class="row4">
+        <div class="ghost">02</div>
+        <div class="dim">凭证在哪</div>
+        <div class="was"><p>认证在<span class="strike">传输层</span>:<span class="mono">Authorization: Bearer …</span> 或 OAuth,一次授权长期有效。</p></div>
+        <div class="now"><p>在<b>工具参数里</b>:<span class="mono">headers</span> 参数带一张一次性支付证明。Gateway 转发参数、不能注入 HTTP 头——这是它能穿过 Gateway 的唯一办法。</p><div class="tagline">PER-CALL, NOT PER-SESSION</div></div>
+      </div>
+
+      <div class="row4">
+        <div class="ghost">03</div>
+        <div class="dim">你是谁</div>
+        <div class="was"><p><span class="strike">先注册 client、发 token</span>,再维护配额表与账单关系,服务端必须认识每个调用方。</p></div>
+        <div class="now"><p>没有账号、没有 key、没有配额表。授权就是链上一次 USDC 转账,<b>结算成功才执行</b>——服务端不需要认识调用方。</p><div class="tagline">NO SIGNUP, NO QUOTA TABLE</div></div>
+      </div>
+
+      <div class="row4">
+        <div class="ghost">04</div>
+        <div class="dim">重试语义</div>
+        <div class="was"><p>同一个请求<span class="strike">可以原样重放</span>,幂等,失败了重试就好。</p></div>
+        <div class="now"><p>证明约 <b>60 秒</b>有效,必须用新连接重试,且每次重试都要一张<b>新</b>证明——过期证明等同未付款。</p><div class="tagline">PROOF EXPIRES, REPLAY DOES NOT WORK</div></div>
+      </div>
+    </div>
+
+    <div class="foot"><span>协议没变 · 传输没变 · 变的是"调用之前先付钱"</span><span>02 / 03</span></div>
+  </section>
+
+  <!-- 03 · wallets, chains, resources -->
+  <section class="slide">
+    <div class="head">
+      <div class="reveal eyebrow">WALLETS · CHAINS · RESOURCES</div>
+      <h2 class="reveal" style="font-size:56px">用什么钱包,跑在哪条链</h2>
+    </div>
+
+    <div class="two">
+      <div class="reveal">
+        <div class="blk-h">支持的钱包与对应链</div>
+        <div class="wal">
+          <div class="wrow">
+            <div class="wp">Coinbase CDP</div>
+            <div class="wm">instrument network: ETHEREUM · SOLANA</div>
+            <div class="wc">
+              <span class="chip2">eip155:1 Ethereum</span>
+              <span class="chip2">eip155:8453 Base</span>
+              <span class="chip2 test">base-sepolia · 测试网</span>
+              <span class="chip2">Solana mainnet</span>
+            </div>
+            <div class="wnote">凭证:API Key ID + Secret + Wallet Secret。测试网首选 Base Sepolia。</div>
+          </div>
+          <div class="wrow">
+            <div class="wp">Stripe(Privy)</div>
+            <div class="wm">instrument network: ETHEREUM · SOLANA</div>
+            <div class="wc">
+              <span class="chip2">eip155:1 Ethereum</span>
+              <span class="chip2">Solana mainnet</span>
+              <span class="chip2 used">solana-devnet · 本 demo</span>
+            </div>
+            <div class="wnote">凭证:AppId + AppSecret + Authorization ID 与私钥。<b>Solana devnet 只有这条 provider 支持</b>,所以本 demo 走它。</div>
+          </div>
+          <div class="wrow" style="border-bottom:0">
+            <div class="wp">稳定币与 faucet</div>
+            <div class="wm">USDC · 6 decimals</div>
+            <div class="wc">
+              <span class="chip2">devnet mint 4zMMC9sr…DncDU</span>
+              <span class="chip2">faucet.circle.com</span>
+            </div>
+            <div class="wnote">收款地址必须已有该代币账户,否则结算永远失败(转账不会替你创建)。</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="reveal">
+        <div class="blk-h">参考 repo 与文档</div>
+        <div class="res">
+          <div class="rgrp">参考实现</div>
+          <div class="ritem"><div class="rp">aws-samples/sample-agentcore-cloudfront-x402-payments</div><div class="rq">AWS 官方 AgentCore × x402 sample;我们的付款环(402 → ProcessPayment → 带证明重试)照它实现</div></div>
+          <div class="ritem"><div class="rp">krystiangw/agenticpay</div><div class="rq">x402 付费 MCP server;本 demo 的 merchant 由它的 <span class="mono">packages/mcp-server</span> 改写成 Lambda</div></div>
+          <div class="ritem"><div class="rp">coinbase/x402</div><div class="rq">协议本体 + facilitator + SDK:<span class="mono">@x402/core</span> · <span class="mono">@x402/express</span> · <span class="mono">@x402/svm</span></div></div>
+          <div class="rgrp">探路与教程</div>
+          <div class="ritem"><div class="rp">civicteam/x402-mcp</div><div class="rq">托管的 x402 MCP demo(Base Sepolia),用来抓真实 402 报文样本</div></div>
+          <div class="ritem"><div class="rp">awslabs/agentcore-samples</div><div class="rq">AgentCore 官方示例仓库(原 <span class="mono">amazon-bedrock-agentcore-samples</span> 已重定向到此;payments 教程见 AgentCore 文档)</div></div>
+          <div class="rgrp">规范与文档</div>
+          <div class="ritem"><div class="rp">modelcontextprotocol.io</div><div class="rq">MCP 规范:JSON-RPC 2.0 报文 + streamable HTTP 传输</div></div>
+          <div class="ritem"><div class="rp">x402.org &nbsp;·&nbsp; docs.aws.amazon.com/bedrock-agentcore</div><div class="rq">x402 协议站与公共 facilitator;AgentCore Payments / Gateway 官方文档</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="foot"><span>Coinbase CDP 与 Stripe(Privy)· x402 v1/v2 · MPP</span><span>03 / 03</span></div>
+  </section>
+
+  </main>
+</div>
+
+<div class="deck-controls">
+  <span id="pageNum">01</span>
+  <span class="track"><span class="fill" id="progressFill"></span></span>
+  <span id="pageTotal">11</span>
+</div>
+
+<div class="edit-hotzone"></div>
+<button class="edit-toggle" id="editToggle" title="编辑模式 (E)">EDIT</button>
+
+<script>
+class SlidePresentation {
+  constructor(){
+    this.slides=[...document.querySelectorAll('.slide')];
+    this.stage=document.getElementById('deckStage');
+    this.current=0;
+    this.setupStageScale();
+    this.setupKeyboardNav();
+    this.setupTouchNav();
+    this.setupWheelNav();
+    document.getElementById('pageTotal').textContent=String(this.slides.length).padStart(2,'0');
+    this.show(0);
+  }
+  setupStageScale(){
+    const scale=()=>{
+      const f=Math.min(window.innerWidth/1920, window.innerHeight/1080);
+      const x=(window.innerWidth-1920*f)/2, y=(window.innerHeight-1080*f)/2;
+      this.stage.style.transform=`translate(${x}px, ${y}px) scale(${f})`;
+    };
+    scale(); window.addEventListener('resize',scale);
+  }
+  setupKeyboardNav(){
+    window.addEventListener('keydown',e=>{
+      if(document.body.classList.contains('editing') && e.key!=='Escape') return;
+      if(['ArrowRight','ArrowDown',' ','PageDown'].includes(e.key)){e.preventDefault();this.next();}
+      else if(['ArrowLeft','ArrowUp','PageUp'].includes(e.key)){e.preventDefault();this.prev();}
+      else if(e.key==='Home'){this.show(0);}
+      else if(e.key==='End'){this.show(this.slides.length-1);}
+    });
+  }
+  setupTouchNav(){
+    let x0=null;
+    window.addEventListener('touchstart',e=>{x0=e.touches[0].clientX;},{passive:true});
+    window.addEventListener('touchend',e=>{
+      if(x0===null)return;
+      const dx=e.changedTouches[0].clientX-x0;
+      if(Math.abs(dx)>50){ dx<0?this.next():this.prev(); }
+      x0=null;
+    },{passive:true});
+  }
+  setupWheelNav(){
+    let lock=false;
+    window.addEventListener('wheel',e=>{
+      if(lock || Math.abs(e.deltaY)<24)return;
+      lock=true; e.deltaY>0?this.next():this.prev();
+      setTimeout(()=>{lock=false;},520);
+    },{passive:true});
+  }
+  next(){this.show(this.current+1);}
+  prev(){this.show(this.current-1);}
+  show(i){
+    this.current=Math.max(0,Math.min(i,this.slides.length-1));
+    this.slides.forEach((s,n)=>{
+      s.classList.toggle('active',n===this.current);
+      s.classList.toggle('visible',n===this.current);
+    });
+    document.getElementById('pageNum').textContent=String(this.current+1).padStart(2,'0');
+    document.getElementById('progressFill').style.width=((this.current+1)/this.slides.length*100)+'%';
+  }
+}
+const deck=new SlidePresentation();
+
+/* --- inline editing: hover the top-left hotzone, or press E ---
+   Text is persisted per element as PLAIN TEXT (textContent), never as stored markup:
+   restoring saved HTML into innerHTML would re-inject whatever was in localStorage. */
+const EDIT_SELECTOR='.slide h1,.slide h2,.slide h3,.slide p,.slide li,.slide .d,.slide .t,.slide .v,.slide .lab,.slide .num,.slide .tag,.slide .big,.slide .cap';
+const editor={
+  isActive:false,
+  fields(){ return [...document.querySelectorAll(EDIT_SELECTOR)]; },
+  toggle(){
+    this.isActive=!this.isActive;
+    document.body.classList.toggle('editing',this.isActive);
+    document.getElementById('editToggle').classList.toggle('active',this.isActive);
+    this.fields().forEach(el=>{ el.contentEditable=this.isActive?'true':'false'; });
+    if(!this.isActive) this.save();
+  },
+  save(){
+    try{
+      const data={};
+      this.fields().forEach((el,i)=>{ data[i]=el.textContent; });
+      localStorage.setItem('acp-deck-text',JSON.stringify(data));
+    }catch(e){}
+  },
+  restore(){
+    try{
+      const raw=localStorage.getItem('acp-deck-text');
+      if(!raw) return;
+      const data=JSON.parse(raw);
+      this.fields().forEach((el,i)=>{
+        if(typeof data[i]==='string' && data[i]!==el.textContent) el.textContent=data[i];
+      });
+    }catch(e){}
+  }
+};
+editor.restore();
+
+const hotzone=document.querySelector('.edit-hotzone');
+const editToggle=document.getElementById('editToggle');
+let hideTimeout=null;
+const hide=()=>{ hideTimeout=setTimeout(()=>{ if(!editor.isActive) editToggle.classList.remove('show'); },400); };
+hotzone.addEventListener('mouseenter',()=>{clearTimeout(hideTimeout);editToggle.classList.add('show');});
+hotzone.addEventListener('mouseleave',hide);
+editToggle.addEventListener('mouseenter',()=>clearTimeout(hideTimeout));
+editToggle.addEventListener('mouseleave',hide);
+editToggle.addEventListener('click',()=>editor.toggle());
+window.addEventListener('keydown',e=>{
+  if(e.key==='e' && !editor.isActive){ editToggle.classList.add('show'); editor.toggle(); }
+  else if(e.key==='Escape' && editor.isActive){ editor.toggle(); }
+  else if(e.key==='s' && (e.metaKey||e.ctrlKey) && editor.isActive){ e.preventDefault(); editor.save(); }
+});
+</script>
+</body>
+</html>

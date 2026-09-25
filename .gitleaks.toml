@@ -1,0 +1,33 @@
+# gitleaks configuration.
+# Extend the default ruleset (do not replace it) — `useDefault` keeps all the
+# built-in secret detectors; we only add targeted allowlists for known false
+# positives that would otherwise fail the secret-scan CI job.
+[extend]
+useDefault = true
+
+# Use path + rule allowlists only for recurring, structurally safe matches that
+# must remain stable across history rewrites. Reserve .gitleaksignore for exact
+# historical fingerprints that cannot be removed without rewriting shared Git
+# history.
+[[allowlists]]
+description = "CDK construct ids in infra/ are not secrets — the L2 construct's logical id (e.g. LogGroup(self, \"ApiLogGroup\", ...)) is high-entropy enough to trip generic-api-key, but contains no credential."
+# Scope narrowly: only the generic-api-key rule, only under infra/.
+targetRules = ["generic-api-key"]
+paths = ['''infra/.*\.py''']
+
+# Matched on the LINE by content — no `targetRules`. CI pins gitleaks v8.28.0, which parses
+# `[[allowlists]]` but does NOT honour `targetRules`: verified by running the pinned image against
+# this repo, where a block using it suppresses nothing (which is also why the infra/ block above has
+# never actually worked on CI, and why `.gitleaksignore` fingerprints were needed instead).
+#
+# Content matching rather than fingerprints, because `.gitleaksignore` entries are
+# `<commit>:<file>:<rule>:<line>` and so die on every rebase — CI scans *every fetched ref*, so a
+# rewritten commit on an unrelated branch (e.g. #107) mints new fingerprints and fails an unrelated
+# MR. That treadmill is what this replaces.
+#
+# What is allowed: `LARK_APP_SECRET_LOGICAL_ID` is the *name* of a CloudFormation resource, declared
+# in infra/ and asserted in a synth test. It is not the secret's value — the constant says so.
+[[allowlists]]
+description = "CDK/CloudFormation logical ids are high-entropy names, not credentials."
+regexTarget = "line"
+regexes = ['''LARK_APP_SECRET_LOGICAL_ID''']

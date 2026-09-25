@@ -1,0 +1,10 @@
+# .semgrepignore — paths excluded from semgrep-based SAST (GitLab Jobs/SAST + Probe). Gitignore
+# syntax; applied BEFORE the scan (a path filter, not an inline suppression — inline
+# `# nosemgrep` is stripped by some scanners, so this is the supported way to silence an area).
+
+# Vendored / third-party trees (belt-and-suspenders; also gitignored).
+**/node_modules/
+
+# Test suite — fixtures use fake/sample credentials (B105/B106) and determinism asserts; not
+# shipped application code, so app-security rules don't apply.
+tests/

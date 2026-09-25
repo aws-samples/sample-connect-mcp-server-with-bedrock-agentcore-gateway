@@ -1,0 +1,16 @@
+{
+  "include": [
+    ".projenrc.py",
+    "app.py",
+    "infra",
+    "scripts",
+    "src"
+  ],
+  "exclude": [
+    "**/__pycache__",
+    "cdk.out",
+    "tests"
+  ],
+  "pythonVersion": "3.13",
+  "typeCheckingMode": "basic"
+}

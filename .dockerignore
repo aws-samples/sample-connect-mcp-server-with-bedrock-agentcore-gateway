@@ -1,0 +1,71 @@
+# Docker build context is the repo root (see infra ApiServiceConstruct: directory="."), but the
+# Dockerfile only COPYs src/api + src/__init__.py. Without this file Docker ships the ENTIRE repo
+# to the daemon as build context on every synth/deploy — including cdk.out (tens of GB), .venv,
+# node_modules, and .git — which is the dominant cause of slow `npx projen deploy`. Exclude
+# everything the image doesn't need so the context is tiny and cache-stable.
+
+# CDK synth output — huge (bundled assets, templates); never needed in an image.
+cdk.out/
+
+# Python virtualenv + caches.
+.venv/
+venv/
+**/__pycache__/
+**/*.pyc
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+
+# Node / frontend — the console is built separately (build:console) and served from S3, not
+# from this container.
+**/node_modules/
+src/console/dist/
+src/console/
+
+# VCS + IDE + agent tooling. Agent skills and issue worktrees are development inputs, never API
+# runtime inputs; excluding them also prevents an accidentally nested worktree from inflating
+# every staged CDK Docker asset.
+.git/
+.idea/
+.vscode/
+.agents/
+.claude/
+.kiro/
+
+# Docs, tests, plans, review artifacts — not part of the API runtime.
+docs/
+tests/
+ai-review-*
+report.xml
+
+# Local settings / secrets (belt-and-suspenders; also gitignored).
+settings.py
+
+# Local scratch files that are not tracked but ARE in the build context, so they shift the API
+# image's asset fingerprint (issue #50). Screenshots, OS metadata and one-off dev scripts are never
+# API runtime inputs; excluding them keeps the hash a function of the SOURCE, not of whatever
+# happens to be lying in the working tree.
+*.png
+*.jpg
+*.jpeg
+.DS_Store
+**/.DS_Store
+scripts/dev/
+
+# Coverage data, and NOT only for hash stability — leaving it out was breaking CI. pytest-xdist
+# workers write `.coverage.<host>.<pid>.<rand>` into the repo root, which is this build context, and
+# a test that synths the stack makes jsii walk and hash the root. It listed a worker's temp file and
+# then tried to open it after the worker exited and deleted it:
+#   RuntimeError: Error: ENOENT: no such file or directory, open '.coverage.runner-…pid851.XJpCeQzx'
+# The failing test was unrelated to whatever change was under review, which is the expensive part —
+# it reads as "your branch broke an acceptance test". The hash argument applies too: with these
+# present the API image's fingerprint depends on which workers happened to still be running.
+.coverage
+.coverage.*
+
+# CI-only caches that live INSIDE the build context (GitLab requires cache paths under
+# $CI_PROJECT_DIR). Every stack-synthesizing test makes CDK walk and hash this root, so leaving
+# these in cost ~100-155s PER TEST in CI for tests that run in 0.7s locally. See .gitlab-ci.yml:
+# UV_CACHE_DIR and JSII_RUNTIME_PACKAGE_CACHE_ROOT.
+.uv_cache/
+.jsii_cache/

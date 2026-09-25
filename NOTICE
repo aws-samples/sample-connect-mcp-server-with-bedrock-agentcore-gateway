@@ -1,0 +1,7 @@
+Third-Party MCP Server Integration for Amazon Bedrock AgentCore Gateway
+Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+
+This product includes software developed at Amazon.com, Inc.
+
+The payer design is adapted from aws-samples/sample-agentcore-cloudfront-x402-payments
+(MIT-0), Copyright Amazon.com, Inc. or its affiliates.

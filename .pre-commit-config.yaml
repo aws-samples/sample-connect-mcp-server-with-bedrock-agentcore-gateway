@@ -1,0 +1,70 @@
+# Install with `npx projen install-hooks`; Amazon git-defender remains the primary
+# core.hooksPath and chains this repository-local hook automatically on commit.
+# `npx projen run-hooks` is the deliberate all-files audit, not a routine pre-commit duplicate.
+#
+# COMMIT-TIME ONLY. Do not add a `pre-push` hook that runs the test suite: pushing from a linked
+# git worktree corrupted the worktree's index in osl_agent_end_to_end, because the hook script
+# lives in the PRIMARY checkout's .git/hooks and pre-commit's stash/restore then resolved against
+# the wrong tree. The symptom is alarming (the whole repository staged as deleted).
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+      - id: trailing-whitespace
+        exclude: ^(.projen/|\.env/|cdk\.out/|cdk\.json|pyproject\.toml|pyrightconfig\.json|\.gitlab-ci\.yml|\.gitattributes|\.gitignore|requirements.*\.txt)
+      - id: end-of-file-fixer
+        exclude: ^(.projen/|\.env/|cdk\.out/|cdk\.json|pyproject\.toml|pyrightconfig\.json|\.gitlab-ci\.yml|\.gitattributes|\.gitignore|requirements.*\.txt)
+      - id: check-yaml
+      - id: check-added-large-files
+      - id: check-merge-conflict
+  - repo: local
+    hooks:
+      # Every local hook below runs its tool through `uv run --no-sync`, NOT bare on PATH.
+      #
+      # Bare names silently pick up whatever is installed globally, which is not what CI runs —
+      # measured on one machine, PATH ruff was several minor versions behind the pinned one, so
+      # commits were formatted and scanned by different tool versions than the pipeline. That is
+      # how "formatted locally, unformatted in CI" happens. `--no-sync` is deliberate: a commit
+      # must not reinstall packages or touch the lock file.
+      - id: ruff-format
+        name: ruff format check
+        entry: uv run --no-sync ruff format
+        args: ["--check"]
+        language: system
+        types: [python]
+      - id: ruff-check
+        name: ruff lint
+        entry: uv run --no-sync ruff check
+        language: system
+        types: [python]
+      # The path list is copied VERBATIM from .gitlab-ci.yml's `lint` job. A hook that checks a
+      # different set than CI is its own defect: it produces a green commit followed by a red
+      # pipeline. Change both or neither.
+      #
+      # `pass_filenames: false` is required, not an optimisation: mypy given a subset of files
+      # resolves imports differently and reports errors the whole-project run does not.
+      - id: mypy
+        name: mypy type check
+        entry: uv run --no-sync mypy
+        args: [".projenrc.py", "app.py", "infra", "scripts", "src"]
+        language: system
+        types: [python]
+        pass_filenames: false
+      - id: bandit
+        name: bandit security scan
+        # Gate at MEDIUM+ to match CI (.projenrc.py): bandit's LOW band is false-positive-heavy
+        # (e.g. B105/B106 on resource names and empty-string placeholders), and failing on it
+        # trains people to sprinkle # nosec, hiding real HIGH findings.
+        entry: uv run --no-sync bandit
+        args: ["-q", "--severity-level", "medium"]
+        language: system
+        types: [python]
+        exclude: ^tests/
+      - id: semgrep
+        name: semgrep security scan
+        entry: scripts/validate/run-semgrep.sh
+        args: ["--error", "--config=.semgrep.yml", "--quiet"]
+        language: system
+        files: \.(py|js|jsx|ts|tsx)$
+        exclude: ^tests/
