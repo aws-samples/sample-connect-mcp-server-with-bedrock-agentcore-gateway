@@ -8,4 +8,8 @@ httpx
 # `AttributeError: 'BedrockAgentCore' object has no attribute '…'` at call time, not at install.
 boto3>=1.43.85
 # Verify the caller's Privy access token against Privy's JWKS (ES256) to derive the payment user.
-pyjwt[crypto]
+# Floor 2.15: older releases carry Inspector CRITICAL/HIGH CVEs.
+pyjwt[crypto]>=2.15
+# Transitive (boto3/httpx) floors: certifi 2026.7.22 = Inspector CRITICAL, urllib3 2.7.0 = HIGH.
+certifi>=2026.10.19
+urllib3>=2.8.0

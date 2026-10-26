@@ -5,9 +5,17 @@
 # `AttributeError: 'BedrockAgentCore' object has no attribute ...` at request time, not at build.
 FROM public.ecr.aws/docker/library/python:3.13-slim@sha256:9d2e5553305c7c7b0097999bb17187c69b921ccd6bc9d40e4bb5ebe652c00285
 
+# The digest pin freezes the base image's OS packages too, so pull Debian's security fixes at build
+# time — Amazon Inspector flags perl / openssl / pcre2 / glibc CVEs that are already fixed upstream.
+RUN apt-get update && apt-get upgrade -y --no-install-recommends && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
-RUN pip install --no-cache-dir \
-    "boto3>=1.43.85" "fastapi>=0.115" "uvicorn[standard]>=0.34" "pyjwt[crypto]>=2.8" "httpx>=0.28" \
+# Floors clear Inspector findings: pyjwt 2.13 (CRITICAL/HIGH, fixed 2.15), certifi 2026.7.22
+# (CRITICAL GHSA-6q48-6c7w-9gw2), urllib3 2.7.0 (HIGH, fixed 2.8.0) — the last two are transitive.
+RUN pip install --no-cache-dir --upgrade pip \
+    && pip install --no-cache-dir \
+    "boto3>=1.43.85" "fastapi>=0.115" "uvicorn[standard]>=0.34" "pyjwt[crypto]>=2.15" "httpx>=0.28" \
+    "certifi>=2026.10.19" "urllib3>=2.8.0" \
     && useradd --create-home --uid 10001 appuser
 COPY --chown=appuser:appuser main.py /app/main.py
 

@@ -5,7 +5,10 @@ FROM public.ecr.aws/docker/library/python:3.13-slim@sha256:9d2e5553305c7c7b00979
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 # The Claude Agent SDK spawns the `claude` CLI subprocess, so the image needs Node + that CLI.
+# `apt-get upgrade` first: the digest pin freezes the base image's OS packages, and Amazon Inspector
+# flags perl / curl / openssl / expat CVEs that Debian has already fixed.
 RUN apt-get update \
+    && apt-get upgrade -y --no-install-recommends \
     && apt-get install -y --no-install-recommends curl ca-certificates gnupg \
     && curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
     && apt-get install -y --no-install-recommends nodejs \
